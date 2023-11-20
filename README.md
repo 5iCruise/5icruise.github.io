@@ -1,9 +1,11 @@
-# INFO Review Built with TiddlyWiki in 2023-2024
+# DW2025's Notes Built with TiddlyWiki in 2023-2024
 Visit Homepage [Darkwarrior's Webhole | DW2025](https://darkwarrior2025.xyz)    
 
-### Y2023 Progress on Nov-15th   
+### Y2023 Progress on Nov-20th   
 
-▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 87%   
+▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 88%   
 
 ### Getting Started Now 
-Refering [TiddlyWiki](https://tiddlywiki.com/#GettingStarted)
+**Refering**    
+[TiddlyWiki EN版](https://tiddlywiki.com/#GettingStarted)      
+[太微 CN版](https://keatonlao.github.io/tiddlywiki-xp/)    
