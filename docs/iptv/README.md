@@ -11,4 +11,9 @@ UPDATE: 2024-09-12
 
 * 云星日记 [IPv4直播源](http://itvbox.cc/云星日记/Ipv4.txt)
 
+* [YanG-1989 Repo](https://github.com/YanG-1989/m3u/Gather.m3u)  ×  不定期更新 → 电视同步 ./ipv6.m3u  
+  * [资源发布页]( https://yang-1989.eu.org/)
+  * [体育订阅](https://tv.iill.top/m3u/Sport)、[电视订阅](https://tv.iill.top/m3u/Gather)、[直播源](https://tv.iill.top/m3u/Live)、[神秘源](https://tv.iill.top/m3u/Adult)、
+  * 
+
 ～ 以上 ～
