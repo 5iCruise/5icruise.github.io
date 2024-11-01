@@ -1,4 +1,4 @@
-UPDATE: 2024-09-12
+UPDATE: 2024-11-01
 
 * SYNC-COPY Joevess 的 [IPTV直播源](https://github.com/joevess/IPTV)    
   * 央视+卫视  ./home.m3u8  
@@ -11,7 +11,7 @@ UPDATE: 2024-09-12
 
 * 云星日记 [IPv4直播源](http://itvbox.cc/云星日记/Ipv4.txt)
 
-* [YanG-1989 Repo](https://github.com/YanG-1989/m3u/Gather.m3u)  ×  不定期更新 → 电视同步 ./ipv6.m3u  
+* [YanG-1989 Repo](https://github.com/YanG-1989/m3u/Gather.m3u)  ×  不定期更新 → 电视同步 ./ipv6.m3u  更2024-10-30
   * [资源发布页]( https://yang-1989.eu.org/)
   * [体育订阅](https://tv.iill.top/m3u/Sport)、[电视订阅](https://tv.iill.top/m3u/Gather)、[直播源](https://tv.iill.top/m3u/Live)、[神秘源](https://tv.iill.top/m3u/Adult)、
   * 
