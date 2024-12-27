@@ -1,9 +1,9 @@
 # DW2025's Notes Built with TiddlyWiki in 2023-2024
 Visit Homepage [Darkwarrior's Webhole | DW2025](https://darkwarrior2025.xyz)    
 
-### Y2024 Progress on NOV-7th   Refer to [Year Progress](https://progressbarserver.appspot.com/)
+### Y2024 Progress on NOV-27th   Refer to [Year Progress](https://progressbarserver.appspot.com/)
 
-▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 85%    
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 98%   
 
 ### Getting Started Now 
 **Refering**    
