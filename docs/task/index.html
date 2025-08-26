@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日工作计划备忘录</title>
+    <meta name="description" content="零依赖的每日工作计划管理工具，支持拖拽排序、Excel导入导出、离线使用">
+    
+    <!-- PWA配置 -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0078f5">
+    
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- SheetJS库用于Excel导出 -->
+    <script src="./xlsx.full.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-info">
+                <div class="date-display" id="currentDate"></div>
+                <div class="week-info" id="weekInfo"></div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="addTaskToPool()">+ 添加任务</button>
+                <button class="btn btn-secondary" onclick="clearWeek()">清空本周</button>
+                <div class="export-dropdown">
+                    <button class="btn btn-primary dropdown-toggle" onclick="toggleExportDropdown()">📊 导出Excel</button>
+                    <div class="dropdown-menu" id="exportDropdown">
+                        <button class="dropdown-item" onclick="showDailyExportModal()">📅 导出日报</button>
+                        <button class="dropdown-item" onclick="exportWeeklyReport()">📋 导出周报</button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" onclick="exportToExcel()">📄 导出CSV备份</button>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="showImportModal()">📥 CSV导入</button>
+                <button class="btn btn-outline" onclick="showSettingsModal()">⚙️ 设置</button>
+            </div>
+        </header>
+
+
+
+        <main class="main-content">
+            <div class="table-title-container">
+                <h1 class="table-title" id="tableTitle" onclick="editTitle()">每周工作计划表</h1>
+                <input type="text" class="table-title-input" id="tableTitleInput" style="display: none;" onblur="saveTitle()" onkeypress="handleTitleKeypress(event)">
+            </div>
+            <div class="weekly-grid" id="weeklyGrid">
+                <div class="time-slot-header"><span class="desktop-text">时间</span><span class="mobile-text">时间</span></div>
+                <div class="day-header" data-day="1">
+                    <span class="desktop-text">周一</span>
+                    <span class="mobile-text">
+                        上午
+                        <span class="mobile-time-range" id="mobileTimeRangeAM">08:00-12:00</span>
+                    </span>
+                </div>
+                <div class="day-header" data-day="2">
+                    <span class="desktop-text">周二</span>
+                    <span class="mobile-text">
+                        下午
+                        <span class="mobile-time-range" id="mobileTimeRangePM">13:00-18:00</span>
+                    </span>
+                </div>
+                <div class="day-header" data-day="3">
+                    <span class="desktop-text">周三</span>
+                    <span class="mobile-text">
+                        晚上
+                        <span class="mobile-time-range" id="mobileTimeRangeEVENING">19:00-23:00</span>
+                    </span>
+                </div>
+                <div class="day-header" data-day="4">周四</div>
+                <div class="day-header" data-day="5">周五</div>
+                <div class="day-header" data-day="6">周六</div>
+                <div class="day-header" data-day="7">周日</div>
+
+                <div class="time-label" data-mobile-day="1"><span class="desktop-text">上午<br>08:00-12:00</span><span class="mobile-text">周一</span></div>
+                <div class="task-cell" data-day="1" data-slot="AM" onclick="addTask(1, 'AM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="2" data-slot="AM" onclick="addTask(2, 'AM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="3" data-slot="AM" onclick="addTask(3, 'AM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="4" data-slot="AM" onclick="addTask(4, 'AM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="5" data-slot="AM" onclick="addTask(5, 'AM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="6" data-slot="AM" onclick="addTask(6, 'AM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="7" data-slot="AM" onclick="addTask(7, 'AM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+
+                <div class="time-label" data-mobile-day="2"><span class="desktop-text">下午<br>13:00-18:00</span><span class="mobile-text">周二</span></div>
+                <div class="task-cell" data-day="1" data-slot="PM" onclick="addTask(1, 'PM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="2" data-slot="PM" onclick="addTask(2, 'PM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="3" data-slot="PM" onclick="addTask(3, 'PM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="4" data-slot="PM" onclick="addTask(4, 'PM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="5" data-slot="PM" onclick="addTask(5, 'PM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="6" data-slot="PM" onclick="addTask(6, 'PM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="7" data-slot="PM" onclick="addTask(7, 'PM')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+
+                <div class="time-label" data-mobile-day="3"><span class="desktop-text">晚上<br>19:00-23:00</span><span class="mobile-text">周三</span></div>
+                <div class="task-cell" data-day="1" data-slot="EVENING" onclick="addTask(1, 'EVENING')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="2" data-slot="EVENING" onclick="addTask(2, 'EVENING')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="3" data-slot="EVENING" onclick="addTask(3, 'EVENING')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="4" data-slot="EVENING" onclick="addTask(4, 'EVENING')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="5" data-slot="EVENING" onclick="addTask(5, 'EVENING')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="6" data-slot="EVENING" onclick="addTask(6, 'EVENING')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                <div class="task-cell" data-day="7" data-slot="EVENING" onclick="addTask(7, 'EVENING')" ondrop="drop(event, 'grid')" ondragover="allowDrop(event)"></div>
+                
+                <!-- 手机端额外的时间标签 -->
+                <div class="time-label mobile-only" data-mobile-day="4"><span class="mobile-text">周四</span></div>
+                <div class="time-label mobile-only" data-mobile-day="5"><span class="mobile-text">周五</span></div>
+                <div class="time-label mobile-only" data-mobile-day="6"><span class="mobile-text">周六</span></div>
+                <div class="time-label mobile-only" data-mobile-day="7"><span class="mobile-text">周日</span></div>
+            </div>
+        </main>
+
+        <!-- 删除右侧面板 -->
+        <!-- <aside class="properties-panel">
+            <h3>任务详情</h3>
+            <div id="taskProperties">
+                <p style="color: var(--text-light); text-align: center;">选择任务查看详情</p>
+            </div>
+        </aside> -->
+    </div>
+
+    <!-- 任务编辑模态框 -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">添加任务</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="taskForm" onsubmit="saveTask(event)">
+                <div class="form-group">
+                    <label>任务标题</label>
+                    <input type="text" class="form-control" id="taskTitle" required>
+                </div>
+                <div class="form-group" style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label>开始时间</label>
+                        <input type="time" class="form-control" id="taskStart" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>结束时间</label>
+                        <input type="time" class="form-control" id="taskEnd" required>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px; margin-bottom: 10px;">
+                    💡 提示：可以直接手动输入时间，格式为 HH:MM
+                </div>
+
+                <div class="form-group">
+                    <label>优先级</label>
+                    <div class="priority-selector">
+                        <button type="button" class="priority-btn" data-priority="3" onclick="selectPriority(3)">低</button>
+                        <button type="button" class="priority-btn" data-priority="2" onclick="selectPriority(2)">中</button>
+                        <button type="button" class="priority-btn" data-priority="1" onclick="selectPriority(1)">高</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>星期选择</label>
+                    <div class="weekday-selector">
+                        <button type="button" class="weekday-btn" data-day="1" onclick="toggleWeekday(1)">周一</button>
+                        <button type="button" class="weekday-btn" data-day="2" onclick="toggleWeekday(2)">周二</button>
+                        <button type="button" class="weekday-btn" data-day="3" onclick="toggleWeekday(3)">周三</button>
+                        <button type="button" class="weekday-btn" data-day="4" onclick="toggleWeekday(4)">周四</button>
+                        <button type="button" class="weekday-btn" data-day="5" onclick="toggleWeekday(5)">周五</button>
+                        <button type="button" class="weekday-btn" data-day="6" onclick="toggleWeekday(6)">周六</button>
+                        <button type="button" class="weekday-btn" data-day="7" onclick="toggleWeekday(7)">周日</button>
+                        <button type="button" class="weekday-btn" data-day="all" onclick="toggleAllWeekdays()">每天</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea class="form-control" id="taskNote" rows="3"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 导入模态框 -->
+    <div class="modal" id="importModal">
+        <div class="modal-content" style="max-width: 600px; width: 90%;">
+            <div class="modal-header">
+                <h3 style="margin: 0; color: var(--primary-color);">
+                    <span style="margin-right: 8px;">📥</span>CSV任务导入
+                </h3>
+                <button class="close-btn" onclick="closeImportModal()" style="font-size: 24px; color: var(--text-light);">&times;</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 30px;">
+                <!-- 文件上传区域 -->
+                <div class="import-upload-area" style="
+                    border: 2px dashed var(--border-color);
+                    border-radius: 6px;
+                    padding: 15px 10px;
+                    text-align: center;
+                    transition: all 0.3s ease;
+                    margin-bottom: 15px;
+                    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                " onmouseover="this.style.borderColor='var(--primary-color)'; this.style.background='linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%)';" 
+                   onmouseout="this.style.borderColor='var(--border-color)'; this.style.background='linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%)';">
+                    
+                    <div style="font-size: 28px; margin-bottom: 8px; color: var(--primary-color);">📁</div>
+                    <h4 style="margin: 0 0 6px 0; color: var(--text-color); font-size: 15px;">拖拽文件到此处或点击选择</h4>
+                    <p style="margin: 0 0 8px 0; color: var(--text-light); font-size: 12px;">
+                        支持CSV格式文件，文件大小不超过5MB
+                    </p>
+                    <input type="file" id="fileInput" accept=".csv" onchange="handleFileSelect(event)" style="
+                        display: none;
+                    ">
+                    <div style="text-align: center;">
+                        <button type="button" onclick="event.stopPropagation(); document.getElementById('fileInput').click()" class="btn btn-primary" style="
+                            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+                            border: none;
+                            padding: 8px 20px;
+                            border-radius: 5px;
+                            font-size: 13px;
+                            font-weight: 500;
+                            color: white;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+                            margin: 0 auto;
+                            display: inline-block;
+                        " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(0, 123, 255, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 123, 255, 0.2)'">
+                            📁 选择CSV文件
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 文件信息 -->
+                <div id="fileInfo" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9ff; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <strong id="fileName" style="color: var(--text-color);"></strong>
+                            <span id="fileSize" style="color: var(--text-light); margin-left: 10px; font-size: 12px;"></span>
+                        </div>
+                        <button onclick="clearFile()" style="background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 18px;">×</button>
+                    </div>
+                </div>
+
+                <!-- 预览区域 -->
+                <div id="importPreview" style="display: none;">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px; padding: 15px; background: linear-gradient(135deg, #e8f5e8, #f0f8f0); border-radius: 8px;">
+                        <div style="font-size: 24px; margin-right: 12px;">✅</div>
+                        <div>
+                            <h4 style="margin: 0 0 5px 0; color: var(--text-color);">
+                                找到 <span id="taskCount" style="color: var(--primary-color); font-weight: bold;">0</span> 个有效任务
+                            </h4>
+                            <p style="margin: 0; color: var(--text-light); font-size: 14px;">请确认导入内容是否正确</p>
+                        </div>
+                    </div>
+                    
+                    <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: white;">
+                        <div id="previewList" style="padding: 0;"></div>
+                    </div>
+                </div>
+
+                <!-- 导入说明 -->
+                <div style="margin-top: 20px; padding: 15px; background: #fff8e1; border-left: 4px solid #ffa726; border-radius: 4px;">
+                    <h5 style="margin: 0 0 10px 0; color: #e65100;">📋 CSV文件格式说明</h5>
+                    <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">
+                        请确保CSV文件包含以下列：<strong>星期,时段,标题,开始时间,结束时间,优先级,备注</strong>
+                    </p>
+                    <p style="margin: 0 0 8px 0; font-size: 13px; color: #888;">
+                        例如：周一,上午,团队会议,09:00,10:00,高,讨论项目进度
+                    </p>
+                    <div style="margin-top: 10px;">
+                        <a href="weekly_template.csv" download="每周任务模板.csv" style="
+                            display: inline-block;
+                            padding: 8px 16px;
+                            background: var(--primary-color);
+                            color: white;
+                            text-decoration: none;
+                            border-radius: 6px;
+                            font-size: 13px;
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='var(--primary-color)'">
+                            📥 下载CSV模板文件
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn btn-secondary" onclick="closeImportModal()" style="padding: 10px 20px; border-radius: 6px;">取消</button>
+                <button class="btn btn-primary" onclick="confirmImport()" id="confirmImportBtn" disabled style="padding: 10px 20px; border-radius: 6px; background: linear-gradient(135deg, var(--primary-color), #0056b3);">
+                    确认导入
+                </button>
+            </div>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>设置</h3>
+                <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>主题</label>
+                <div class="theme-selector">
+                    <button type="button" class="theme-btn" style="background: white; border: 1px solid #ddd;" onclick="setTheme('light')" title="浅色"></button>
+                    <button type="button" class="theme-btn" style="background: #1a1a1a;" onclick="setTheme('dark')" title="深色"></button>
+                    <button type="button" class="theme-btn" style="background: #f0f8f0;" onclick="setTheme('green')" title="护眼绿"></button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>显示设置</label>
+                <div style="margin-bottom: 12px; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                    <div style="display: flex; gap: 20px; margin-bottom: 8px;">
+                        <label style="font-size: 14px; margin: 0; display: flex; align-items: center;">
+                            <input type="checkbox" id="hideSaturday" style="margin-right: 8px;">
+                            隐藏周六
+                        </label>
+                        <label style="font-size: 14px; margin: 0; display: flex; align-items: center;">
+                            <input type="checkbox" id="hideSunday" style="margin-right: 8px;">
+                            隐藏周日
+                        </label>
+                    </div>
+                    <div style="font-size: 12px; color: #666;">
+                        可以根据需要选择隐藏周六或周日列，适合灵活安排工作时间的用户
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>时段设置</label>
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 8px; margin-bottom: 12px; font-size: 13px; color: #856404;">
+                    💡 提示：上午时段和下午时段为必选，不可取消显示
+                </div>
+                
+                <!-- 手机端时间范围显示设置 -->
+                <div style="margin-bottom: 12px; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                    <label style="font-size: 14px; margin: 0; display: flex; align-items: center;">
+                        <input type="checkbox" id="showMobileTimeRange" checked style="margin-right: 8px;">
+                        手机端显示时间范围
+                    </label>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                        控制在手机端是否显示时间段的具体时间范围
+                    </div>
+                </div>
+                
+                <!-- 上午时段设置 -->
+                <div style="margin-bottom: 12px; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label style="font-size: 14px; margin: 0; display: flex; align-items: center; color: #666;">
+                            <input type="checkbox" id="showMorning" checked style="margin-right: 8px;" disabled>
+                            显示上午时段 (必选)
+                        </label>
+                        <label style="font-size: 14px; margin: 0; display: flex; align-items: center;">
+                            <input type="checkbox" id="showMorningLabel" checked style="margin-right: 8px;">
+                            显示文字标签
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select class="form-control" id="morningStart" style="width: 100px;">
+                            <option value="06:00">06:00</option>
+                            <option value="06:30">06:30</option>
+                            <option value="07:00">07:00</option>
+                            <option value="07:30">07:30</option>
+                            <option value="08:00" selected>08:00</option>
+                            <option value="08:30">08:30</option>
+                            <option value="09:00">09:00</option>
+                            <option value="09:30">09:30</option>
+                            <option value="10:00">10:00</option>
+                            <option value="10:30">10:30</option>
+                        </select>
+                        <span>至</span>
+                        <select class="form-control" id="morningEnd" style="width: 100px;">
+                            <option value="10:00">10:00</option>
+                            <option value="10:30">10:30</option>
+                            <option value="11:00">11:00</option>
+                            <option value="11:30">11:30</option>
+                            <option value="12:00" selected>12:00</option>
+                            <option value="12:30">12:30</option>
+                            <option value="13:00">13:00</option>
+                            <option value="13:30">13:30</option>
+                            <option value="14:00">14:00</option>
+                            <option value="14:30">14:30</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 下午时段设置 -->
+                <div style="margin-bottom: 12px; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label style="font-size: 14px; margin: 0; display: flex; align-items: center; color: #666;">
+                            <input type="checkbox" id="showAfternoon" checked style="margin-right: 8px;" disabled>
+                            显示下午时段 (必选)
+                        </label>
+                        <label style="font-size: 14px; margin: 0; display: flex; align-items: center;">
+                            <input type="checkbox" id="showAfternoonLabel" checked style="margin-right: 8px;">
+                            显示文字标签
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select class="form-control" id="afternoonStart" style="width: 100px;">
+                            <option value="12:00">12:00</option>
+                            <option value="12:30">12:30</option>
+                            <option value="13:00" selected>13:00</option>
+                            <option value="13:30">13:30</option>
+                            <option value="14:00">14:00</option>
+                            <option value="14:30">14:30</option>
+                            <option value="15:00">15:00</option>
+                            <option value="15:30">15:30</option>
+                        </select>
+                        <span>至</span>
+                        <select class="form-control" id="afternoonEnd" style="width: 100px;">
+                            <option value="16:00">16:00</option>
+                            <option value="16:30">16:30</option>
+                            <option value="17:00">17:00</option>
+                            <option value="17:30">17:30</option>
+                            <option value="18:00" selected>18:00</option>
+                            <option value="18:30">18:30</option>
+                            <option value="19:00">19:00</option>
+                            <option value="19:30">19:30</option>
+                            <option value="20:00">20:00</option>
+                            <option value="20:30">20:30</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 晚上时段设置 -->
+                <div style="margin-bottom: 12px; border: 1px solid var(--border-color); padding: 12px; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <label style="font-size: 14px; margin: 0; display: flex; align-items: center;">
+                            <input type="checkbox" id="showEvening" checked style="margin-right: 8px;">
+                            显示晚上时段
+                        </label>
+                        <label style="font-size: 14px; margin: 0; display: flex; align-items: center;">
+                            <input type="checkbox" id="showEveningLabel" checked style="margin-right: 8px;">
+                            显示文字标签
+                        </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select class="form-control" id="eveningStart" style="width: 100px;">
+                            <option value="18:00">18:00</option>
+                            <option value="18:30">18:30</option>
+                            <option value="19:00" selected>19:00</option>
+                            <option value="19:30">19:30</option>
+                            <option value="20:00">20:00</option>
+                            <option value="20:30">20:30</option>
+                            <option value="21:00">21:00</option>
+                            <option value="21:30">21:30</option>
+                        </select>
+                        <span>至</span>
+                        <select class="form-control" id="eveningEnd" style="width: 100px;">
+                            <option value="21:00">21:00</option>
+                            <option value="21:30">21:30</option>
+                            <option value="22:00">22:00</option>
+                            <option value="22:30">22:30</option>
+                            <option value="23:00" selected>23:00</option>
+                            <option value="23:30">23:30</option>
+                            <option value="24:00">24:00</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日报导出模态框 -->
+    <div class="modal" id="dailyExportModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 style="margin: 0; color: var(--primary-color);">
+                    <span style="margin-right: 8px;">📅</span>导出日报
+                </h3>
+                <button class="close-btn" onclick="closeDailyExportModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div class="form-group">
+                    <label style="font-size: 16px; font-weight: 500; margin-bottom: 15px; display: block;">选择要导出的日期：</label>
+                    <div class="weekday-selector" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+                        <button type="button" class="export-day-btn" data-day="1" onclick="selectExportDay(1)">周一</button>
+                        <button type="button" class="export-day-btn" data-day="2" onclick="selectExportDay(2)">周二</button>
+                        <button type="button" class="export-day-btn" data-day="3" onclick="selectExportDay(3)">周三</button>
+                        <button type="button" class="export-day-btn" data-day="4" onclick="selectExportDay(4)">周四</button>
+                        <button type="button" class="export-day-btn" data-day="5" onclick="selectExportDay(5)">周五</button>
+                        <button type="button" class="export-day-btn" data-day="6" onclick="selectExportDay(6)">周六</button>
+                        <button type="button" class="export-day-btn" data-day="7" onclick="selectExportDay(7)">周日</button>
+                    </div>
+                </div>
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 20px;">
+                    <p style="margin: 0; font-size: 14px; color: #666;">
+                        <strong>📋 导出说明：</strong><br>
+                        • 将导出选定日期的所有时段任务<br>
+                        • 文件格式：Excel (.xlsx)<br>
+                        • 包含任务标题、时间、优先级等信息
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px;">
+                <button class="btn btn-secondary" onclick="closeDailyExportModal()">取消</button>
+                <button class="btn btn-primary" onclick="exportDailyReport()" id="exportDailyBtn" disabled>
+                    📊 导出日报
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal" id="deleteConfirmModal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-header" style="border-bottom: none; padding-bottom: 10px;">
+                <h3 style="margin: 0; color: var(--primary-color); font-size: 18px;">
+                    <span style="margin-right: 8px;">⚠️</span>确认删除
+                </h3>
+            </div>
+            <div class="modal-body" style="padding: 20px 30px;">
+                <p style="margin: 0; font-size: 16px; color: var(--text-color); line-height: 1.5;">
+                    确定要删除这个任务吗？
+                </p>
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">
+                    此操作无法撤销
+                </p>
+            </div>
+            <div class="modal-footer" style="padding: 20px 30px; border-top: 1px solid var(--border-color); display: flex; justify-content: center; gap: 15px;">
+                <button class="btn btn-secondary" onclick="closeDeleteConfirmModal()" style="min-width: 80px;">取消</button>
+                <button class="btn btn-danger" onclick="confirmDeleteTask()" style="min-width: 80px; background: #dc3545; border-color: #dc3545;">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let tasks = [];
+        let currentEditingTask = null;
+        let draggedTask = null;
+        let importedData = null;
+
+        // 工具函数
+        function generateId() {
+            return Math.random().toString(36).substr(2, 9);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = type === 'error' ? 'var(--danger-color)' : 'var(--success-color)';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function saveToLocalStorage(taskData = null) {
+            const dataToSave = taskData || tasks;
+            localStorage.setItem('weeklyTasks', JSON.stringify(dataToSave));
+            if (taskData === null) {
+                showToast('已自动保存到本地');
+            }
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('weeklyTasks');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    tasks = Array.isArray(parsed) ? parsed : [];
+                    return tasks;
+                } catch (error) {
+                    console.error('解析本地存储数据失败:', error);
+                    tasks = [];
+                    return [];
+                }
+            }
+            tasks = [];
+            return [];
+        }
+
+        function updateDateDisplay() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', options);
+            
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay() + 1);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            
+            const weekNumber = Math.ceil((now - new Date(now.getFullYear(), 0, 1)) / 604800000);
+            document.getElementById('weekInfo').textContent = `第${weekNumber}周 ${startOfWeek.getMonth()+1}/${startOfWeek.getDate()}-${endOfWeek.getMonth()+1}/${endOfWeek.getDate()}`;
+            
+            // 高亮今天（排除周日）
+            const today = now.getDay() || 7;
+            document.querySelectorAll('.day-header').forEach(header => {
+                header.classList.remove('today');
+                if (parseInt(header.dataset.day) === today && today !== 7) {
+                    header.classList.add('today');
+                }
+            });
+        }
+
+        function renderTasks() {
+            // 清空所有任务显示
+            document.querySelectorAll('.task-card').forEach(card => card.remove());
+            document.querySelectorAll('#taskPool .task-card').forEach(card => card.remove());
+
+            // 获取显示/隐藏设置
+            const showMorning = localStorage.getItem('showMorning') !== 'false';
+            const showAfternoon = localStorage.getItem('showAfternoon') !== 'false';
+            const showEvening = localStorage.getItem('showEvening') !== 'false';
+
+            tasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                
+                if (task.slot === 'POOL') {
+                    document.getElementById('taskPool').appendChild(taskElement);
+                } else {
+                    // 检查时段是否被隐藏
+                    let shouldShow = true;
+                    if (task.slot === '上午' && !showMorning) shouldShow = false;
+                    if (task.slot === '下午' && !showAfternoon) shouldShow = false;
+                    if (task.slot === '晚上' && !showEvening) shouldShow = false;
+                    
+                    if (shouldShow) {
+                        const cell = document.querySelector(`[data-day="${task.weekday}"][data-slot="${task.slot}"]`);
+                        if (cell) {
+                            cell.appendChild(taskElement);
+                        }
+                    } else {
+                        // 如果时段被隐藏，将任务移到任务池
+                        task.slot = 'POOL';
+                        task.weekday = null;
+                        document.getElementById('taskPool').appendChild(taskElement);
+                    }
+                }
+            });
+        }
+
+        function createTaskElement(task) {
+            const div = document.createElement('div');
+            div.className = `task-card ${task.done ? 'done' : ''} ${getPriorityClass(task.priority)}`;
+            div.draggable = true;
+            div.dataset.taskId = task.id;
+            
+            div.innerHTML = `
+                <div style="display: flex; align-items: flex-start; gap: 5px;">
+                    <input type="checkbox" class="task-checkbox" ${task.done ? 'checked' : ''} 
+                           onchange="toggleTask('${task.id}')">
+                    <div style="flex: 1;">
+                        <div class="task-title">${task.title}</div>
+                        ${task.start && task.end ? `<div class="task-time">${task.start}-${task.end}</div>` : ''}
+                        ${task.note ? `<div class="task-note">${task.note}</div>` : ''}
+                    </div>
+                </div>
+                <div class="task-actions">
+                    <button class="delete-btn" onclick="deleteTask('${task.id}')">×</button>
+                </div>
+            `;
+
+            div.addEventListener('dragstart', (e) => {
+                draggedTask = task;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => div.classList.add('dragging'), 0);
+            });
+
+            div.addEventListener('dragend', () => {
+                div.classList.remove('dragging');
+                draggedTask = null;
+            });
+
+            // 添加触摸拖拽支持
+            let touchStartX, touchStartY, isDragging = false, touchTarget = null;
+            
+            div.addEventListener('touchstart', (e) => {
+                if (e.target.classList.contains('task-checkbox') || e.target.classList.contains('delete-btn')) {
+                    return;
+                }
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                isDragging = false;
+                touchTarget = null;
+            }, { passive: false });
+            
+            div.addEventListener('touchmove', (e) => {
+                if (e.target.classList.contains('task-checkbox') || e.target.classList.contains('delete-btn')) {
+                    return;
+                }
+                e.preventDefault();
+                
+                const touch = e.touches[0];
+                const deltaX = Math.abs(touch.clientX - touchStartX);
+                const deltaY = Math.abs(touch.clientY - touchStartY);
+                
+                if (!isDragging && (deltaX > 10 || deltaY > 10)) {
+                    isDragging = true;
+                    draggedTask = task;
+                    div.classList.add('dragging');
+                    div.style.position = 'fixed';
+                    div.style.zIndex = '1000';
+                    div.style.pointerEvents = 'none';
+                    div.style.opacity = '0.8';
+                }
+                
+                if (isDragging) {
+                    div.style.left = (touch.clientX - 50) + 'px';
+                    div.style.top = (touch.clientY - 25) + 'px';
+                    
+                    // 查找触摸点下的目标元素
+                    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (elementBelow) {
+                        const taskCell = elementBelow.closest('.task-cell');
+                        if (taskCell && taskCell !== touchTarget) {
+                            if (touchTarget) {
+                                touchTarget.classList.remove('drag-over');
+                            }
+                            touchTarget = taskCell;
+                            taskCell.classList.add('drag-over');
+                        } else if (!taskCell && touchTarget) {
+                            touchTarget.classList.remove('drag-over');
+                            touchTarget = null;
+                        }
+                    }
+                }
+            }, { passive: false });
+            
+            div.addEventListener('touchend', (e) => {
+                if (isDragging) {
+                    e.preventDefault();
+                    
+                    // 重置样式
+                    div.style.position = '';
+                    div.style.zIndex = '';
+                    div.style.pointerEvents = '';
+                    div.style.opacity = '';
+                    div.style.left = '';
+                    div.style.top = '';
+                    div.classList.remove('dragging');
+                    
+                    if (touchTarget) {
+                        touchTarget.classList.remove('drag-over');
+                        
+                        // 执行拖放操作
+                        const fakeEvent = {
+                            preventDefault: () => {},
+                            dataTransfer: {
+                                getData: () => task.id
+                            }
+                        };
+                        drop(fakeEvent, 'grid', touchTarget);
+                        touchTarget = null;
+                    }
+                    
+                    draggedTask = null;
+                    isDragging = false;
+                } else if (!isDragging) {
+                    // 如果没有拖拽，则处理点击事件
+                    if (!e.target.classList.contains('task-checkbox') && !e.target.classList.contains('delete-btn')) {
+                        console.log('点击任务，准备编辑：', task);
+                        editTask(task);
+                    }
+                }
+            }, { passive: false });
+
+            // 确保任务卡片可点击（桌面端）
+            div.style.cursor = 'pointer';
+            div.addEventListener('click', (e) => {
+                if (isDragging) return; // 如果正在拖拽，忽略点击
+                e.stopPropagation();
+                if (!e.target.classList.contains('task-checkbox') && !e.target.classList.contains('delete-btn')) {
+                    console.log('点击任务，准备编辑：', task);
+                    editTask(task);
+                }
+            });
+
+            return div;
+        }
+
+        function getPriorityClass(priority) {
+            switch (priority) {
+                case 1: return 'high-priority';
+                case 2: return 'medium-priority';
+                case 3: return 'low-priority';
+                default: return '';
+            }
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drop(ev, targetType, targetElement = null) {
+            ev.preventDefault();
+            
+            if (!draggedTask) return;
+
+            if (targetType === 'pool') {
+                // 拖到任务池，只更新位置，不清除原任务
+                draggedTask.slot = 'POOL';
+                draggedTask.weekday = null;
+            } else {
+                const cell = targetElement || ev.target.closest('.task-cell');
+                if (cell) {
+                    if (draggedTask.slot === 'POOL') {
+                        // 从任务池拖到网格，创建副本
+                        const newTask = {
+                            ...draggedTask,
+                            id: generateId(),
+                            weekday: parseInt(cell.dataset.day),
+                            slot: cell.dataset.slot,
+                            order: Date.now()
+                        };
+                        tasks.push(newTask);
+                    } else {
+                        // 网格间移动，直接更新位置
+                        draggedTask.weekday = parseInt(cell.dataset.day);
+                        draggedTask.slot = cell.dataset.slot;
+                    }
+                }
+            }
+
+            renderTasks();
+            saveToLocalStorage();
+        }
+
+        function addTask(day, slot) {
+            currentEditingTask = null;
+            document.getElementById('modalTitle').textContent = '添加任务';
+            document.getElementById('taskForm').reset();
+            
+            // 设置默认时间
+            if (slot) {
+                const morningRange = localStorage.getItem('morningRange') || '08:00-12:00';
+                const afternoonRange = localStorage.getItem('afternoonRange') || '13:00-18:00';
+                const eveningRange = localStorage.getItem('eveningRange') || '19:00-23:00';
+                
+                let startTime, endTime;
+                if (slot === 'AM') {
+                    const times = morningRange.split('-');
+                    startTime = times[0];
+                    endTime = times[1];
+                } else if (slot === 'PM') {
+                    const times = afternoonRange.split('-');
+                    startTime = times[0];
+                    endTime = times[1];
+                } else if (slot === 'EVENING') {
+                    const times = eveningRange.split('-');
+                    startTime = times[0];
+                    endTime = times[1];
+                }
+                
+                if (startTime && endTime) {
+                    document.getElementById('taskStart').value = startTime;
+                    document.getElementById('taskEnd').value = endTime;
+                }
+            }
+
+            // 设置默认优先级
+            selectPriority(2);
+
+            // 设置默认星期几
+            if (day) {
+                // 清除所有选中状态
+                document.querySelectorAll('.weekday-btn[data-day="1"], .weekday-btn[data-day="2"], .weekday-btn[data-day="3"], .weekday-btn[data-day="4"], .weekday-btn[data-day="5"], .weekday-btn[data-day="6"], .weekday-btn[data-day="7"], .weekday-btn[data-day="all"]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // 选中对应的星期
+                const weekdayBtn = document.querySelector(`.weekday-btn[data-day="${day}"]`);
+                if (weekdayBtn) {
+                    weekdayBtn.classList.add('active');
+                }
+            }
+
+            document.getElementById('taskModal').style.display = 'block';
+            
+            // 存储临时位置信息
+            window.tempTaskLocation = { day, slot };
+        }
+
+        function addTaskToPool() {
+            addTask(null, null);
+        }
+
+        function editTask(task) {
+            console.log('开始编辑任务：', task);
+            if (!task) {
+                console.error('任务对象为空');
+                return;
+            }
+            currentEditingTask = task;
+            document.getElementById('modalTitle').textContent = '编辑任务';
+            document.getElementById('taskTitle').value = task.title;
+            document.getElementById('taskStart').value = task.start || '';
+            document.getElementById('taskEnd').value = task.end || '';
+            document.getElementById('taskNote').value = task.note || '';
+            selectPriority(task.priority || 2);
+            
+            // 重置星期选择
+            document.querySelectorAll('.weekday-btn[data-day="1"], .weekday-btn[data-day="2"], .weekday-btn[data-day="3"], .weekday-btn[data-day="4"], .weekday-btn[data-day="5"], .weekday-btn[data-day="6"], .weekday-btn[data-day="7"], .weekday-btn[data-day="all"]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 如果任务有星期信息，选中对应的星期
+            if (task.weekday) {
+                const weekdayBtn = document.querySelector(`.weekday-btn[data-day="${task.weekday}"]`);
+                if (weekdayBtn) {
+                    weekdayBtn.classList.add('active');
+                }
+            }
+            
+            console.log('打开模态框');
+            const modal = document.getElementById('taskModal');
+            modal.style.display = 'block';
+            modal.style.zIndex = '10000'; // 确保模态框在最上层
+            
+            // 确保模态框可见
+            setTimeout(() => {
+                modal.style.opacity = '1';
+            }, 10);
+        }
+
+        function saveTask(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('taskTitle').value.trim();
+            if (!title) {
+                showToast('请输入任务标题', 'error');
+                return;
+            }
+            
+            const start = document.getElementById('taskStart').value;
+            const end = document.getElementById('taskEnd').value;
+            const note = document.getElementById('taskNote').value;
+            const priority = parseInt(document.querySelector('.priority-btn.active').dataset.priority);
+            
+            if (currentEditingTask) {
+                // 编辑现有任务
+                currentEditingTask.title = title;
+                currentEditingTask.start = start;
+                currentEditingTask.end = end;
+                currentEditingTask.note = note;
+                currentEditingTask.priority = priority;
+            } else {
+                // 创建新任务 - 支持多星期选择
+                const location = window.tempTaskLocation;
+                const selectedWeekdays = getSelectedWeekdays();
+                
+                if (selectedWeekdays.length > 0) {
+                    // 选择了具体星期，为每个选中的星期创建任务
+                    selectedWeekdays.forEach(weekday => {
+                        const newTask = {
+                            id: generateId(),
+                            title,
+                            start,
+                            end,
+                            note,
+                            priority,
+                            done: false,
+                            doneAt: null,
+                            weekday: weekday,
+                            slot: location?.slot || 'AM',
+                            order: Date.now()
+                        };
+                        tasks.push(newTask);
+                    });
+                } else {
+                    // 没有选择星期，根据位置信息创建任务
+                    if (location && location.day && location.slot) {
+                        // 有明确位置信息，创建到指定位置
+                        const newTask = {
+                            id: generateId(),
+                            title,
+                            start,
+                            end,
+                            note,
+                            priority,
+                            done: false,
+                            doneAt: null,
+                            weekday: location.day,
+                            slot: location.slot,
+                            order: Date.now()
+                        };
+                        tasks.push(newTask);
+                    } else {
+                        // 没有位置信息（比如从任务池添加），放到任务池
+                        const newTask = {
+                            id: generateId(),
+                            title,
+                            start,
+                            end,
+                            note,
+                            priority,
+                            done: false,
+                            doneAt: null,
+                            weekday: null,
+                            slot: 'POOL',
+                            order: Date.now()
+                        };
+                        tasks.push(newTask);
+                    }
+                }
+            }
+
+            renderTasks();
+            saveToLocalStorage();
+            closeModal();
+            showToast('任务保存成功', 'success');
+        }
+
+        function toggleTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.done = !task.done;
+                task.doneAt = task.done ? new Date().toISOString() : null;
+                renderTasks();
+                saveToLocalStorage();
+            }
+        }
+
+        let taskToDelete = null;
+
+        function deleteTask(taskId) {
+            taskToDelete = taskId;
+            document.getElementById('deleteConfirmModal').style.display = 'block';
+        }
+
+        function closeDeleteConfirmModal() {
+            document.getElementById('deleteConfirmModal').style.display = 'none';
+            taskToDelete = null;
+        }
+
+        function confirmDeleteTask() {
+            if (taskToDelete) {
+                tasks = tasks.filter(t => t.id !== taskToDelete);
+                renderTasks();
+                saveToLocalStorage();
+                showToast('任务已删除');
+                closeDeleteConfirmModal();
+            }
+        }
+
+        function selectPriority(priority) {
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-priority="${priority}"]`).classList.add('active');
+        }
+
+
+
+        function toggleWeekday(day) {
+            const btn = document.querySelector(`.weekday-btn[data-day="${day}"]`);
+            btn.classList.toggle('active');
+        }
+
+        function toggleAllWeekdays() {
+            const allBtn = document.querySelector('.weekday-btn[data-day="all"]');
+            const isAllSelected = allBtn.classList.contains('active');
+            
+            if (isAllSelected) {
+                // 取消全选
+                allBtn.classList.remove('active');
+                document.querySelectorAll('.weekday-btn[data-day="1"], .weekday-btn[data-day="2"], .weekday-btn[data-day="3"], .weekday-btn[data-day="4"], .weekday-btn[data-day="5"], .weekday-btn[data-day="6"], .weekday-btn[data-day="7"]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+            } else {
+                // 全选
+                allBtn.classList.add('active');
+                document.querySelectorAll('.weekday-btn[data-day="1"], .weekday-btn[data-day="2"], .weekday-btn[data-day="3"], .weekday-btn[data-day="4"], .weekday-btn[data-day="5"], .weekday-btn[data-day="6"], .weekday-btn[data-day="7"]').forEach(btn => {
+                    btn.classList.add('active');
+                });
+            }
+        }
+
+        function getSelectedWeekdays() {
+            const selectedBtns = document.querySelectorAll('.weekday-btn[data-day="1"].active, .weekday-btn[data-day="2"].active, .weekday-btn[data-day="3"].active, .weekday-btn[data-day="4"].active, .weekday-btn[data-day="5"].active, .weekday-btn[data-day="6"].active, .weekday-btn[data-day="7"].active');
+            return Array.from(selectedBtns).map(btn => parseInt(btn.dataset.day));
+        }
+
+        function closeModal() {
+            document.getElementById('taskModal').style.display = 'none';
+            currentEditingTask = null;
+            window.tempTaskLocation = null;
+            
+            // 重置星期选择
+            document.querySelectorAll('.weekday-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+
+        // 删除loadSampleData函数
+        // 该函数已被移除，不再提供示例数据功能
+
+        // 添加测试任务用于验证编辑功能
+
+
+        function clearWeek() {
+            if (confirm('确定要清空本周所有任务吗？')) {
+                tasks = tasks.filter(task => task.slot === 'POOL');
+                renderTasks();
+                saveToLocalStorage();
+                showToast('已清空本周任务');
+            }
+        }
+
+        function loadSampleData() {
+            if (confirm('加载示例数据会覆盖当前所有任务，确定继续吗？')) {
+                tasks = [
+                    {
+                        id: generateId(),
+                        title: '晨间会议',
+                        start: '09:00',
+                        end: '09:30',
+                        note: '周例会，讨论本周工作计划',
+                        priority: 1,
+                        done: false,
+                        weekday: 1,
+                        slot: 'AM',
+                        order: 1
+                    },
+                    {
+                        id: generateId(),
+                        title: '项目开发',
+                        start: '14:00',
+                        end: '17:00',
+                        note: '完成新功能开发',
+                        priority: 2,
+                        done: false,
+                        weekday: 2,
+                        slot: 'PM',
+                        order: 2
+                    },
+                    {
+                        id: generateId(),
+                        title: '健身运动',
+                        start: '19:00',
+                        end: '20:00',
+                        note: '跑步30分钟',
+                        priority: 3,
+                        done: false,
+                        weekday: 3,
+                        slot: 'EVENING',
+                        order: 3
+                    }
+                ];
+                renderTasks();
+                saveToLocalStorage();
+                showToast('已加载示例数据');
+            }
+        }
+
+
+
+        // Excel导入导出功能
+        function exportToExcel() {
+            const tasks = loadFromLocalStorage() || [];
+            
+            // 扩展CSV格式定义，包含所有任务属性
+            const CSV_HEADERS = ['星期', '时段', '任务标题', '开始时间', '结束时间', '优先级', '是否完成', '备注', '重复类型', '选定星期', '任务ID'];
+            
+            // 映射表 - 统一标准
+            const WEEKDAY_MAP = {
+                1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日',
+                null: '任务池'
+            };
+            const SLOT_MAP = {
+                'AM': '上午', 'PM': '下午', 'EVENING': '晚上', 'POOL': '任务池'
+            };
+            const PRIORITY_MAP = {
+                1: '高', 2: '中', 3: '低'
+            };
+            const REPEAT_TYPE_MAP = {
+                'once': '单次', 'daily': '每天', 'weekly': '每周'
+            };
+            
+            // 构建CSV数据
+            const csvData = [CSV_HEADERS];
+            
+            // 确保tasks是数组并过滤有效任务
+            const taskArray = Array.isArray(tasks) ? tasks : [];
+            const validTasks = taskArray.filter(task => 
+                task && 
+                typeof task === 'object' &&
+                task.title && task.title.trim() !== ''
+            );
+            
+            // 转换任务数据
+            validTasks.forEach(task => {
+                // 处理选定星期
+                let selectedWeekdaysText = '';
+                if (task.selectedWeekdays && Array.isArray(task.selectedWeekdays) && task.selectedWeekdays.length > 0) {
+                    selectedWeekdaysText = task.selectedWeekdays.map(day => WEEKDAY_MAP[day] || day).join(',');
+                }
+                
+                csvData.push([
+                    WEEKDAY_MAP[task.weekday] || '任务池',
+                    SLOT_MAP[task.slot] || '任务池',
+                    task.title || '',
+                    task.start || '',
+                    task.end || '',
+                    PRIORITY_MAP[task.priority] || '中',
+                    task.done ? '是' : '否',
+                    task.note || '',
+                    REPEAT_TYPE_MAP[task.repeatType] || '单次',
+                    selectedWeekdaysText,
+                    task.id || ''
+                ]);
+            });
+            
+            // 生成CSV内容
+            const csvContent = csvData.map(row => 
+                row.map(cell => {
+                    const str = String(cell || '');
+                    // 处理需要引号的字段
+                    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+                        return '"' + str.replace(/"/g, '""') + '"';
+                    }
+                    return str;
+                }).join(',')
+            ).join('\r\n');
+            
+            // 创建并下载文件
+            const blob = new Blob(['\ufeff' + csvContent], { 
+                type: 'text/csv;charset=utf-8;'
+            });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `weekly_tasks_${new Date().toISOString().split('T')[0]}.csv`;
+            link.style.display = 'none';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast(`成功导出 ${validTasks.length} 个任务`);
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').style.display = 'block';
+            document.getElementById('importPreview').style.display = 'none';
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+            importedData = null;
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // 显示文件信息
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                
+                parseExcelFile(file);
+            }
+        }
+
+        function clearFile() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('importPreview').style.display = 'none';
+            importedData = null;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 统一CSV解析函数
+        function parseCSVLine(line) {
+            const cells = [];
+            let current = '';
+            let inQuotes = false;
+            let i = 0;
+            
+            while (i < line.length) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i += 2;
+                    } else {
+                        inQuotes = !inQuotes;
+                        i++;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    cells.push(current);
+                    current = '';
+                    i++;
+                } else {
+                    current += char;
+                    i++;
+                }
+            }
+            
+            cells.push(current);
+            return cells;
+        }
+
+        function parseExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.replace(/\r\n/g, '\n').split('\n');
+                const newTasks = [];
+                
+                // 标准映射表 - 与导出保持一致
+                const WEEKDAY_MAP = {
+                    '周一': 1, '周二': 2, '周三': 3, '周四': 4, '周五': 5, '周六': 6, '周日': 7,
+                    '星期一': 1, '星期二': 2, '星期三': 3, '星期四': 4, '星期五': 5, '星期六': 6, '星期日': 7,
+                    '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7,
+                    'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4, 'friday': 5, 'saturday': 6, 'sunday': 7,
+                    'mon': 1, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6, 'sun': 7,
+                    '任务池': null
+                };
+                
+                const SLOT_MAP = {
+                    '上午': 'AM', '下午': 'PM', '晚上': 'EVENING', '任务池': 'POOL',
+                    'AM': 'AM', 'PM': 'PM', 'EVENING': 'EVENING', 'POOL': 'POOL',
+                    'morning': 'AM', 'afternoon': 'PM', 'evening': 'EVENING'
+                };
+                
+                const PRIORITY_MAP = {
+                    '高': 1, '中': 2, '低': 3,
+                    'high': 1, 'medium': 2, 'low': 3,
+                    '1': 1, '2': 2, '3': 3
+                };
+                
+                const COMPLETION_MAP = {
+                    '是': true, '否': false,
+                    'true': true, 'false': false,
+                    '1': true, '0': false,
+                    'yes': true, 'no': false
+                };
+                
+                const REPEAT_TYPE_MAP = {
+                    '单次': 'once', '每天': 'daily', '每周': 'weekly',
+                    'once': 'once', 'daily': 'daily', 'weekly': 'weekly'
+                };
+                
+                // 跳过标题行，处理数据行
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line || line === '') continue;
+                    
+                    // 跳过表头行
+                    if (line.includes('星期') && line.includes('任务标题')) {
+                        continue;
+                    }
+                    
+                    try {
+                        // 解析CSV行
+                        const cells = parseCSVLine(line);
+                        if (!cells || cells.length < 7) {
+                            console.warn(`跳过第 ${i + 1} 行: 列数不足`);
+                            continue;
+                        }
+                        
+                        // 清理数据
+                        const cleanCells = cells.map(cell => cell.trim().replace(/^"|"$/g, ''));
+                        
+                        // 提取字段（支持新旧格式）
+                        const weekdayText = cleanCells[0] || '周一';
+                        const slotText = cleanCells[1] || '上午';
+                        const title = cleanCells[2] || '';
+                        const start = cleanCells[3] || '';
+                        const end = cleanCells[4] || '';
+                        const priorityText = cleanCells[5] || '中';
+                        const completionText = cleanCells[6] || '否';
+                        const note = cleanCells[7] || '';
+                        const repeatTypeText = cleanCells[8] || '单次'; // 新字段
+                        const selectedWeekdaysText = cleanCells[9] || ''; // 新字段
+                        const taskId = cleanCells[10] || generateId(); // 新字段
+                        
+                        // 跳过空标题
+                        if (!title || title.trim() === '') {
+                            continue;
+                        }
+                        
+                        // 解析选定星期
+                        let selectedWeekdays = [];
+                        if (selectedWeekdaysText && selectedWeekdaysText.trim()) {
+                            const weekdayNames = selectedWeekdaysText.split(',').map(name => name.trim());
+                            selectedWeekdays = weekdayNames.map(name => WEEKDAY_MAP[name]).filter(day => day !== undefined && day !== null);
+                        }
+                        
+                        // 创建任务对象
+                        const task = {
+                            id: taskId.trim() || generateId(),
+                            title: title.trim(),
+                            start: start.trim(),
+                            end: end.trim(),
+                            priority: PRIORITY_MAP[priorityText.toLowerCase()] || 2,
+                            done: COMPLETION_MAP[completionText.toLowerCase()] || false,
+                            note: note.trim(),
+                            weekday: WEEKDAY_MAP[weekdayText] !== undefined ? WEEKDAY_MAP[weekdayText] : 1,
+                            slot: SLOT_MAP[slotText] || 'AM',
+                            order: Date.now() + i * 1000,
+                            repeatType: REPEAT_TYPE_MAP[repeatTypeText] || 'once',
+                            selectedWeekdays: selectedWeekdays,
+                            doneAt: null
+                        };
+                        
+                        newTasks.push(task);
+                        
+                    } catch (error) {
+                        console.warn(`解析第 ${i + 1} 行失败:`, error.message);
+                    }
+                }
+                
+                if (newTasks.length > 0) {
+                    importedData = newTasks;
+                    document.getElementById('taskCount').textContent = newTasks.length;
+                    
+                    // 显示预览
+                    const previewList = document.getElementById('previewList');
+                    if (previewList) {
+                        const slots = { AM: '上午', PM: '下午', EVENING: '晚上', POOL: '任务池' };
+                        const weekdays = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+                        const priorityColors = { 1: '#ff5252', 2: '#ffa726', 3: '#66bb6a' };
+                        const repeatTypes = { 'once': '单次', 'daily': '每天', 'weekly': '每周' };
+                        
+                        previewList.innerHTML = newTasks.slice(0, 10).map(task => 
+                            `<div style="padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 12px; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f8f9ff'" onmouseout="this.style.backgroundColor=''">
+                                <div style="width: 4px; height: 40px; border-radius: 2px; background: ${priorityColors[task.priority]}; flex-shrink: 0;"></div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: var(--text-color); margin-bottom: 4px;">${task.title}</div>
+                                    <div style="font-size: 13px; color: var(--text-light);">
+                                        ${task.weekday ? weekdays[task.weekday] : '任务池'} • 
+                                        ${slots[task.slot] || '未知时段'} • 
+                                        ${task.start} - ${task.end} • 
+                                        ${repeatTypes[task.repeatType] || '单次'}
+                                    </div>
+                                </div>
+                                <div style="font-size: 12px; color: ${priorityColors[task.priority]}; font-weight: 500;">
+                                    ${task.priority === 1 ? '高' : task.priority === 2 ? '中' : '低'}优先级
+                                </div>
+                            </div>`
+                        ).join('');
+                        
+                        if (newTasks.length > 10) {
+                            previewList.innerHTML += `
+                                <div style="padding: 20px; text-align: center; color: var(--text-light); font-size: 14px;">
+                                    📊 还有 <strong style="color: var(--primary-color);">${newTasks.length - 10}</strong> 个任务未显示
+                                </div>`;
+                        }
+                    }
+                    
+                    document.getElementById('importPreview').style.display = 'block';
+                    document.getElementById('confirmImportBtn').disabled = false;
+                } else {
+                    showToast('未找到有效任务数据，请检查CSV格式', 'error');
+                }
+            };
+            
+            reader.onerror = function() {
+                showToast('文件读取失败，请重试', 'error');
+            };
+            
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function confirmImport() {
+            if (!importedData || !Array.isArray(importedData) || importedData.length === 0) {
+                showToast('没有可导入的数据', 'error');
+                return;
+            }
+            
+            try {
+                // 获取现有任务
+                const currentTasks = loadFromLocalStorage() || [];
+                const currentTaskArray = Array.isArray(currentTasks) ? currentTasks : [];
+                
+                // 处理导入的任务，确保数据完整性
+                const processedTasks = importedData.map(task => {
+                    const processedTask = {
+                        id: task.id || generateId(),
+                        title: task.title || '',
+                        start: task.start || '',
+                        end: task.end || '',
+                        priority: task.priority || 2,
+                        done: task.done || false,
+                        note: task.note || '',
+                        weekday: task.weekday,
+                        slot: task.slot || 'AM',
+                        order: task.order || Date.now(),
+                        repeatType: task.repeatType || 'once',
+                        selectedWeekdays: task.selectedWeekdays || [],
+                        doneAt: task.doneAt || null
+                    };
+                    
+                    // 如果是重复任务且在任务池中，确保正确设置
+                    if (processedTask.repeatType !== 'once' && (!processedTask.weekday || processedTask.slot === 'POOL')) {
+                        processedTask.weekday = null;
+                        processedTask.slot = 'POOL';
+                    }
+                    
+                    return processedTask;
+                });
+                
+                // 合并任务（避免重复ID）
+                const existingIds = new Set(currentTaskArray.map(task => task.id));
+                const newTasks = processedTasks.filter(task => !existingIds.has(task.id));
+                const updatedTasks = [...currentTaskArray, ...newTasks];
+                
+                // 保存到本地存储并更新全局tasks变量
+                tasks = updatedTasks;
+                saveToLocalStorage(updatedTasks);
+                closeImportModal();
+                
+                // 显示成功通知
+                const successToast = document.createElement('div');
+                successToast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: linear-gradient(135deg, #4caf50, #45a049);
+                    color: white;
+                    padding: 20px 30px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
+                    font-size: 16px;
+                    font-weight: 500;
+                    z-index: 10000;
+                    animation: slideIn 0.3s ease-out;
+                `;
+                successToast.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 24px;">✅</span>
+                        <div>
+                            <div style="font-weight: 600;">导入成功！</div>
+                            <div style="font-size: 14px; opacity: 0.9;">已添加 ${newTasks.length} 个任务${processedTasks.length > newTasks.length ? `（跳过 ${processedTasks.length - newTasks.length} 个重复任务）` : ''}</div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(successToast);
+                setTimeout(() => {
+                    successToast.style.animation = 'slideOut 0.3s ease-in';
+                    setTimeout(() => successToast.remove(), 300);
+                }, 3000);
+                
+                renderTasks();
+                
+                // 清空导入数据
+                importedData = null;
+                
+            } catch (error) {
+                console.error('导入失败:', error);
+                showToast('导入失败，请重试', 'error');
+            }
+        }
+
+        function showSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'block';
+            loadSettings();
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            
+            // 更新主题按钮状态
+            document.querySelectorAll('.theme-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+        }
+
+        function loadSettings() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // 高亮当前主题按钮
+            const themeBtns = document.querySelectorAll('.theme-btn');
+            if (savedTheme === 'light' && themeBtns[0]) themeBtns[0].classList.add('active');
+            if (savedTheme === 'dark' && themeBtns[1]) themeBtns[1].classList.add('active');
+            if (savedTheme === 'green' && themeBtns[2]) themeBtns[2].classList.add('active');
+            
+            // 加载时段设置
+            const morningRange = localStorage.getItem('morningRange') || '08:00-12:00';
+            const afternoonRange = localStorage.getItem('afternoonRange') || '13:00-18:00';
+            const eveningRange = localStorage.getItem('eveningRange') || '19:00-23:00';
+            
+            // 加载显示/隐藏设置 - 上午和下午为必选
+            const showMorning = true; // 上午时段必选
+            const showAfternoon = true; // 下午时段必选
+            const showEvening = localStorage.getItem('showEvening') !== 'false';
+            const showMorningLabel = localStorage.getItem('showMorningLabel') !== 'false';
+            const showAfternoonLabel = localStorage.getItem('showAfternoonLabel') !== 'false';
+            const showEveningLabel = localStorage.getItem('showEveningLabel') !== 'false';
+            const showMobileTimeRange = localStorage.getItem('showMobileTimeRange') !== 'false';
+            
+            // 加载周末显示设置
+            const hideSaturday = localStorage.getItem('hideSaturday') === 'true';
+            const hideSunday = localStorage.getItem('hideSunday') === 'true';
+            
+            // 解析并设置上午时段
+            const morningTimes = morningRange.split('-');
+            if (morningTimes.length === 2) {
+                document.getElementById('morningStart').value = morningTimes[0];
+                document.getElementById('morningEnd').value = morningTimes[1];
+            }
+            
+            // 解析并设置下午时段
+            const afternoonTimes = afternoonRange.split('-');
+            if (afternoonTimes.length === 2) {
+                document.getElementById('afternoonStart').value = afternoonTimes[0];
+                document.getElementById('afternoonEnd').value = afternoonTimes[1];
+            }
+            
+            // 解析并设置晚上时段
+            const eveningTimes = eveningRange.split('-');
+            if (eveningTimes.length === 2) {
+                document.getElementById('eveningStart').value = eveningTimes[0];
+                document.getElementById('eveningEnd').value = eveningTimes[1];
+            }
+            
+            // 设置显示/隐藏复选框 - 上午和下午强制选中
+            document.getElementById('showMorning').checked = true;
+            document.getElementById('showAfternoon').checked = true;
+            document.getElementById('showEvening').checked = showEvening;
+            document.getElementById('showMorningLabel').checked = showMorningLabel;
+            document.getElementById('showAfternoonLabel').checked = showAfternoonLabel;
+            document.getElementById('showEveningLabel').checked = showEveningLabel;
+            document.getElementById('showMobileTimeRange').checked = showMobileTimeRange;
+            
+            // 设置周末显示复选框
+            document.getElementById('hideSaturday').checked = hideSaturday;
+            document.getElementById('hideSunday').checked = hideSunday;
+            
+            // 应用周末显示设置
+            toggleWeekendDisplay();
+        }
+
+        function updateTimeLabels() {
+            const morningRange = localStorage.getItem('morningRange') || '08:00-12:00';
+            const afternoonRange = localStorage.getItem('afternoonRange') || '13:00-18:00';
+            const eveningRange = localStorage.getItem('eveningRange') || '19:00-23:00';
+            
+            const showMorning = localStorage.getItem('showMorning') !== 'false';
+            const showAfternoon = localStorage.getItem('showAfternoon') !== 'false';
+            const showEvening = localStorage.getItem('showEvening') !== 'false';
+            const showMorningLabel = localStorage.getItem('showMorningLabel') !== 'false';
+            const showAfternoonLabel = localStorage.getItem('showAfternoonLabel') !== 'false';
+            const showEveningLabel = localStorage.getItem('showEveningLabel') !== 'false';
+            const showMobileTimeRange = localStorage.getItem('showMobileTimeRange') !== 'false';
+            
+            const timeLabels = document.querySelectorAll('.time-label');
+            const weeklyGrid = document.querySelector('.weekly-grid');
+            
+            // 更新上午时段
+            if (timeLabels[0]) {
+                timeLabels[0].style.display = showMorning ? '' : 'none';
+                const desktopText = timeLabels[0].querySelector('.desktop-text');
+                if (desktopText) {
+                    desktopText.innerHTML = showMorningLabel ? `上午<br>${morningRange}` : '上午';
+                }
+                
+                // 隐藏对应的任务单元格
+                const morningCells = document.querySelectorAll('[data-slot="AM"]');
+                morningCells.forEach(cell => {
+                    cell.style.display = showMorning ? '' : 'none';
+                });
+            }
+            
+            // 更新下午时段
+            if (timeLabels[1]) {
+                timeLabels[1].style.display = showAfternoon ? '' : 'none';
+                const desktopText = timeLabels[1].querySelector('.desktop-text');
+                if (desktopText) {
+                    desktopText.innerHTML = showAfternoonLabel ? `下午<br>${afternoonRange}` : '下午';
+                }
+                
+                // 隐藏对应的任务单元格
+                const afternoonCells = document.querySelectorAll('[data-slot="PM"]');
+                afternoonCells.forEach(cell => {
+                    cell.style.display = showAfternoon ? '' : 'none';
+                });
+            }
+            
+            // 更新晚上时段
+            if (timeLabels[2]) {
+                if (window.innerWidth <= 480) {
+                    // 手机端：使用强制的display:none确保兼容性
+                    // 晚上列相关元素：表头data-day="3" + 所有data-slot="EVENING"的任务单元格
+                    const eveningColumn = [
+                        document.querySelector('.day-header[data-day="3"]'),
+                        ...document.querySelectorAll('[data-slot="EVENING"]')
+                    ];
+                    
+                    eveningColumn.forEach(element => {
+                        if (element) {
+                            if (showEvening) {
+                                element.classList.remove('mobile-hidden');
+                                element.style.display = '';
+                            } else {
+                                element.classList.add('mobile-hidden');
+                                element.style.display = 'none !important';
+                            }
+                        }
+                    });
+                } else {
+                    // 桌面端：保持原有逻辑
+                    timeLabels[2].style.display = showEvening ? '' : 'none';
+                    const eveningCells = document.querySelectorAll('[data-slot="EVENING"]');
+                    eveningCells.forEach(cell => {
+                        cell.style.display = showEvening ? '' : 'none';
+                    });
+                }
+                
+                const desktopText = timeLabels[2].querySelector('.desktop-text');
+                if (desktopText) {
+                    desktopText.innerHTML = showEveningLabel ? `晚上<br>${eveningRange}` : '晚上';
+                }
+            }
+            
+            // 动态调整网格模板（桌面端和手机端）
+            if (window.innerWidth <= 480) {
+                // 手机端：添加CSS类控制网格布局
+                const weeklyGrid = document.querySelector('.weekly-grid');
+                if (weeklyGrid) {
+                    weeklyGrid.classList.remove('evening-hidden', 'evening-visible');
+                    weeklyGrid.classList.add(showEvening ? 'evening-visible' : 'evening-hidden');
+                    
+                    // 强制重新渲染网格布局
+                    weeklyGrid.style.display = 'none';
+                    weeklyGrid.offsetHeight; // 触发重排
+                    weeklyGrid.style.display = 'grid';
+                }
+                
+                // 手机端：重新调用toggleWeekendDisplay来更新完整的网格布局
+                toggleWeekendDisplay();
+            } else {
+                // 桌面端：只调整行模板
+                if (showEvening) {
+                    // 显示晚上时段：标题行 + 三个时段行
+                    weeklyGrid.style.gridTemplateRows = 'auto 1fr 1fr 1fr';
+                } else {
+                    // 隐藏晚上时段：标题行 + 两个时段行（平分空间）
+                    weeklyGrid.style.gridTemplateRows = 'auto 1fr 1fr';
+                }
+            }
+            
+            // 更新手机端时间范围显示
+            updateMobileTimeRanges(morningRange, afternoonRange, eveningRange, showMobileTimeRange);
+        }
+
+        function updateMobileTimeRanges(morningRange, afternoonRange, eveningRange, showMobileTimeRange) {
+            // 更新手机端时间范围显示
+            const mobileTimeRangeAM = document.getElementById('mobileTimeRangeAM');
+            const mobileTimeRangePM = document.getElementById('mobileTimeRangePM');
+            const mobileTimeRangeEVENING = document.getElementById('mobileTimeRangeEVENING');
+            
+            if (mobileTimeRangeAM) {
+                mobileTimeRangeAM.textContent = morningRange;
+                mobileTimeRangeAM.style.display = showMobileTimeRange ? 'block' : 'none';
+            }
+            
+            if (mobileTimeRangePM) {
+                mobileTimeRangePM.textContent = afternoonRange;
+                mobileTimeRangePM.style.display = showMobileTimeRange ? 'block' : 'none';
+            }
+            
+            if (mobileTimeRangeEVENING) {
+                mobileTimeRangeEVENING.textContent = eveningRange;
+                mobileTimeRangeEVENING.style.display = showMobileTimeRange ? 'block' : 'none';
+            }
+        }
+
+        function repositionMobileTimeLabels(hideSaturday, hideSunday) {
+            // 在新的移动端布局中，时间标签已经通过CSS正确定位
+            // 这个函数现在主要用于处理隐藏逻辑，CSS已经处理了基本定位
+            // 移动端布局：8行（标题+周一到周日）x 4列（时间+上午+下午+晚上）
+        }
+
+        function repositionMobileElements(hideSaturday, hideSunday, showEvening) {
+            // 只在手机端执行
+            if (window.innerWidth > 480) return;
+            
+            // 创建可见天数的映射
+            const dayMapping = [];
+            for (let day = 1; day <= 7; day++) {
+                if (day === 6 && hideSaturday) continue;
+                if (day === 7 && hideSunday) continue;
+                dayMapping.push(day);
+            }
+            
+            // 重新定位可见元素的网格位置
+            dayMapping.forEach((day, index) => {
+                const actualRow = index + 2; // +2 因为第一行是表头
+                
+                // 设置时间标签位置（只对没有hidden类的元素设置）
+                const timeLabel = document.querySelector(`.time-label[data-mobile-day="${day}"]`);
+                if (timeLabel && !timeLabel.classList.contains('hidden')) {
+                    timeLabel.style.gridRow = `${actualRow}`;
+                }
+                
+                // 设置任务单元格位置（只对没有hidden类的元素设置）
+                const amCell = document.querySelector(`.task-cell[data-day="${day}"][data-slot="AM"]`);
+                if (amCell && !amCell.classList.contains('hidden')) {
+                    amCell.style.gridColumn = '2';
+                    amCell.style.gridRow = `${actualRow}`;
+                }
+                
+                const pmCell = document.querySelector(`.task-cell[data-day="${day}"][data-slot="PM"]`);
+                if (pmCell && !pmCell.classList.contains('hidden')) {
+                    pmCell.style.gridColumn = '3';
+                    pmCell.style.gridRow = `${actualRow}`;
+                }
+                
+                const eveningCell = document.querySelector(`.task-cell[data-day="${day}"][data-slot="EVENING"]`);
+                if (eveningCell && !eveningCell.classList.contains('hidden')) {
+                    if (showEvening) {
+                        eveningCell.style.gridColumn = '4';
+                        eveningCell.style.gridRow = `${actualRow}`;
+                        eveningCell.style.display = '';
+                    } else {
+                        // 当晚上时段隐藏时，确保晚上单元格不显示
+                        eveningCell.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        function toggleWeekendDisplay() {
+            const hideSaturday = localStorage.getItem('hideSaturday') === 'true';
+            const hideSunday = localStorage.getItem('hideSunday') === 'true';
+            const weeklyGrid = document.querySelector('.weekly-grid');
+            
+            if (window.innerWidth <= 480) {
+                // 手机端：参考PC端逻辑，使用统一的hidden类
+                // 周六相关元素：任务单元格和手机端时间标签
+                const saturdayElements = [
+                    ...document.querySelectorAll('.task-cell[data-day="6"]'),
+                    ...document.querySelectorAll('.time-label[data-mobile-day="6"]')
+                ];
+                
+                // 周日相关元素：任务单元格和手机端时间标签
+                const sundayElements = [
+                    ...document.querySelectorAll('.task-cell[data-day="7"]'),
+                    ...document.querySelectorAll('.time-label[data-mobile-day="7"]')
+                ];
+                
+                // 控制周六的显示/隐藏
+                saturdayElements.forEach(element => {
+                    if (hideSaturday) {
+                        element.classList.add('hidden');
+                    } else {
+                        element.classList.remove('hidden');
+                    }
+                });
+                
+                // 控制周日的显示/隐藏
+                sundayElements.forEach(element => {
+                    if (hideSunday) {
+                        element.classList.add('hidden');
+                    } else {
+                        element.classList.remove('hidden');
+                    }
+                });
+            } else {
+                // 桌面端：保持原有逻辑
+                const saturdayElements = document.querySelectorAll('[data-day="6"]');
+                const sundayElements = document.querySelectorAll('[data-day="7"]');
+                
+                saturdayElements.forEach(element => {
+                    if (hideSaturday) {
+                        element.classList.add('hidden');
+                    } else {
+                        element.classList.remove('hidden');
+                    }
+                });
+                
+                sundayElements.forEach(element => {
+                    if (hideSunday) {
+                        element.classList.add('hidden');
+                    } else {
+                        element.classList.remove('hidden');
+                    }
+                });
+            }
+            
+            // 动态调整网格模板
+            if (window.innerWidth <= 480) {
+                // 手机端：调整行数和列数
+                let visibleDays = 7;
+                if (hideSaturday) visibleDays--;
+                if (hideSunday) visibleDays--;
+                
+                // 检查晚上时段是否隐藏（从localStorage读取）
+                const showEvening = localStorage.getItem('showEvening') !== 'false';
+                let visibleTimeSlots = showEvening ? 3 : 2; // 上午、下午、晚上
+                
+                // 添加CSS类来控制网格布局 - 增强浏览器兼容性
+                weeklyGrid.classList.remove('evening-hidden', 'evening-visible');
+                weeklyGrid.classList.add(showEvening ? 'evening-visible' : 'evening-hidden');
+                
+                // 手机端网格：动态列数和行数
+                const columnTemplate = showEvening ? '45px 1fr 1fr 1fr' : '45px 1fr 1fr';
+                weeklyGrid.style.gridTemplateColumns = columnTemplate;
+                weeklyGrid.style.gridTemplateRows = `auto repeat(${visibleDays}, 1fr)`;
+                
+                // 强制重新渲染网格布局
+                weeklyGrid.style.display = 'none';
+                weeklyGrid.offsetHeight; // 触发重排
+                weeklyGrid.style.display = 'grid';
+                
+                console.log('手机端网格调整:', {
+                    showEvening,
+                    columnTemplate,
+                    visibleDays,
+                    gridClass: showEvening ? 'evening-visible' : 'evening-hidden'
+                });
+                
+                // 动态设置元素的网格位置
+                repositionMobileElements(hideSaturday, hideSunday, showEvening);
+                
+                // 确保网格高度适应内容
+                const headerHeight = 160;
+                const availableHeight = window.innerHeight - headerHeight;
+                weeklyGrid.style.height = `${Math.max(400, availableHeight)}px`;
+                weeklyGrid.style.maxHeight = `${availableHeight}px`;
+            } else {
+                // 桌面端：调整列数
+                let visibleDays = 7;
+                if (hideSaturday) visibleDays--;
+                if (hideSunday) visibleDays--;
+                
+                // 根据屏幕尺寸设置不同的第一列宽度
+                let firstColumnWidth = '150px';
+                if (window.innerWidth <= 768) {
+                    firstColumnWidth = '80px';
+                }
+                
+                // 设置新的网格模板
+                weeklyGrid.style.gridTemplateColumns = `${firstColumnWidth} repeat(${visibleDays}, 1fr)`;
+            }
+        }
+
+        function saveSettings() {
+            // 保存时段设置
+            const morningStart = document.getElementById('morningStart').value;
+            const morningEnd = document.getElementById('morningEnd').value;
+            const afternoonStart = document.getElementById('afternoonStart').value;
+            const afternoonEnd = document.getElementById('afternoonEnd').value;
+            const eveningStart = document.getElementById('eveningStart').value;
+            const eveningEnd = document.getElementById('eveningEnd').value;
+            
+            const morningRange = `${morningStart}-${morningEnd}`;
+            const afternoonRange = `${afternoonStart}-${afternoonEnd}`;
+            const eveningRange = `${eveningStart}-${eveningEnd}`;
+            
+            localStorage.setItem('morningRange', morningRange);
+            localStorage.setItem('afternoonRange', afternoonRange);
+            localStorage.setItem('eveningRange', eveningRange);
+            
+            // 保存显示/隐藏设置 - 上午和下午强制为true
+            localStorage.setItem('showMorning', true);
+            localStorage.setItem('showAfternoon', true);
+            localStorage.setItem('showEvening', document.getElementById('showEvening').checked);
+            localStorage.setItem('showMorningLabel', document.getElementById('showMorningLabel').checked);
+            localStorage.setItem('showAfternoonLabel', document.getElementById('showAfternoonLabel').checked);
+            localStorage.setItem('showEveningLabel', document.getElementById('showEveningLabel').checked);
+            localStorage.setItem('showMobileTimeRange', document.getElementById('showMobileTimeRange').checked);
+            
+            // 保存周末显示设置
+            localStorage.setItem('hideSaturday', document.getElementById('hideSaturday').checked);
+            localStorage.setItem('hideSunday', document.getElementById('hideSunday').checked);
+            
+            // 应用周末显示设置
+            toggleWeekendDisplay();
+            
+            // 更新时段标签显示和时段可见性
+            updateTimeLabels();
+            renderTasks();
+            
+            showToast('设置已保存');
+            closeSettingsModal();
+        }
+
+        // 标题编辑功能
+        function editTitle() {
+            const titleElement = document.getElementById('tableTitle');
+            const inputElement = document.getElementById('tableTitleInput');
+            
+            titleElement.style.display = 'none';
+            inputElement.style.display = 'inline-block';
+            inputElement.value = titleElement.textContent;
+            inputElement.focus();
+            inputElement.select();
+        }
+
+        function saveTitle() {
+            const titleElement = document.getElementById('tableTitle');
+            const inputElement = document.getElementById('tableTitleInput');
+            
+            const newTitle = inputElement.value.trim();
+            if (newTitle) {
+                titleElement.textContent = newTitle;
+                // 保存到localStorage
+                localStorage.setItem('tableTitle', newTitle);
+            }
+            
+            titleElement.style.display = 'inline-block';
+            inputElement.style.display = 'none';
+        }
+
+        function handleTitleKeypress(event) {
+            if (event.key === 'Enter') {
+                saveTitle();
+            } else if (event.key === 'Escape') {
+                const titleElement = document.getElementById('tableTitle');
+                const inputElement = document.getElementById('tableTitleInput');
+                
+                titleElement.style.display = 'inline-block';
+                inputElement.style.display = 'none';
+            }
+        }
+
+        function loadTableTitle() {
+            const savedTitle = localStorage.getItem('tableTitle');
+            if (savedTitle) {
+                document.getElementById('tableTitle').textContent = savedTitle;
+            }
+        }
+
+        // 键盘快捷键
+        // 移除不存在的dropZone事件监听器
+        // 这些事件监听器引用了不存在的dropZone元素
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey) {
+                switch (e.key) {
+                    case 'n':
+                        e.preventDefault();
+                        addTaskToPool();
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        saveToLocalStorage();
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportToExcel();
+                        break;
+                }
+            }
+        });
+
+
+
+        // 全局错误处理
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript错误：', e.error);
+            console.error('错误信息：', e.message);
+            console.error('错误位置：', e.filename, '行', e.lineno);
+        });
+
+        // 窗口大小变化时重新调整布局
+        window.addEventListener('resize', () => {
+            toggleWeekendDisplay();
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDateDisplay();
+            loadFromLocalStorage();
+            loadSettings();
+            loadTableTitle(); // 加载保存的标题
+            
+            // 初始化手机端网格布局CSS类
+            if (window.innerWidth <= 480) {
+                const weeklyGrid = document.querySelector('.weekly-grid');
+                const showEvening = localStorage.getItem('showEvening') !== 'false';
+                if (weeklyGrid) {
+                    weeklyGrid.classList.remove('evening-hidden', 'evening-visible');
+                    weeklyGrid.classList.add(showEvening ? 'evening-visible' : 'evening-hidden');
+                }
+            }
+            
+            toggleWeekendDisplay(); // 应用周末显示设置
+            updateTimeLabels();
+            renderTasks(); // 添加任务渲染，确保页面加载时显示任务
+            
+            // 每分钟更新日期显示
+            setInterval(updateDateDisplay, 60000);
+            
+            console.log('页面加载完成，任务数量：', tasks.length);
+            console.log('任务列表：', tasks);
+        });
+
+        // 导出功能相关函数
+        let selectedExportDay = null;
+
+        // 切换导出下拉菜单
+        function toggleExportDropdown() {
+            const dropdown = document.getElementById('exportDropdown');
+            const toggle = document.querySelector('.dropdown-toggle');
+            
+            if (dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+                toggle.classList.remove('active');
+            } else {
+                dropdown.classList.add('show');
+                toggle.classList.add('active');
+            }
+        }
+
+        // 显示日报导出模态框
+        function showDailyExportModal() {
+            const modal = document.getElementById('dailyExportModal');
+            modal.style.display = 'block';
+            selectedExportDay = null;
+            document.getElementById('exportDailyBtn').disabled = true;
+            
+            // 清除之前的选择
+            modal.querySelectorAll('.export-day-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // 关闭下拉菜单
+            document.getElementById('exportDropdown').classList.remove('show');
+            document.querySelector('.dropdown-toggle').classList.remove('active');
+        }
+
+        // 关闭日报导出模态框
+        function closeDailyExportModal() {
+            document.getElementById('dailyExportModal').style.display = 'none';
+            selectedExportDay = null;
+        }
+
+        // 选择导出日期
+        function selectExportDay(day) {
+            selectedExportDay = day;
+            
+            // 更新按钮状态
+            const modal = document.getElementById('dailyExportModal');
+            modal.querySelectorAll('.export-day-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            const selectedBtn = modal.querySelector(`.export-day-btn[data-day="${day}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('selected');
+            }
+            
+            // 启用导出按钮
+            document.getElementById('exportDailyBtn').disabled = false;
+        }
+
+        // 导出日报
+        function exportDailyReport() {
+            if (!selectedExportDay) {
+                showToast('请先选择要导出的日期', 'error');
+                return;
+            }
+
+            const tasks = loadFromLocalStorage() || [];
+            const dayNames = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const slotNames = { 'AM': '上午', 'PM': '下午', 'EVENING': '晚上' };
+            const priorityNames = { 1: '高', 2: '中', 3: '低' };
+
+            // 筛选选定日期的任务
+            const dayTasks = tasks.filter(task => task.weekday === selectedExportDay);
+
+            if (dayTasks.length === 0) {
+                showToast(`${dayNames[selectedExportDay]}没有任务数据`, 'error');
+                return;
+            }
+
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 准备数据
+            const wsData = [
+                ['时段', '任务标题', '开始时间', '结束时间', '优先级', '完成状态', '备注']
+            ];
+
+            // 按时段分组并排序
+            const timeSlots = ['AM', 'PM', 'EVENING'];
+            timeSlots.forEach(slot => {
+                const slotTasks = dayTasks.filter(task => task.slot === slot)
+                    .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+                
+                if (slotTasks.length > 0) {
+                    slotTasks.forEach(task => {
+                        wsData.push([
+                            slotNames[task.slot] || task.slot,
+                            task.title || '',
+                            task.start || '',
+                            task.end || '',
+                            priorityNames[task.priority] || '中',
+                            task.done ? '已完成' : '未完成',
+                            task.note || ''
+                        ]);
+                    });
+                }
+            });
+
+            // 创建工作表
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            
+            // 设置列宽
+            ws['!cols'] = [
+                { wch: 10 }, // 时段
+                { wch: 30 }, // 任务标题
+                { wch: 12 }, // 开始时间
+                { wch: 12 }, // 结束时间
+                { wch: 10 }, // 优先级
+                { wch: 12 }, // 完成状态
+                { wch: 25 }  // 备注
+            ];
+
+            // 添加工作表到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, `${dayNames[selectedExportDay]}日报`);
+
+            // 生成文件名
+            const today = new Date();
+            const fileName = `${dayNames[selectedExportDay]}日报_${today.getFullYear()}年${(today.getMonth()+1).toString().padStart(2,'0')}月${today.getDate().toString().padStart(2,'0')}日.xlsx`;
+
+            // 导出文件
+            XLSX.writeFile(wb, fileName);
+            
+            showToast(`成功导出${dayNames[selectedExportDay]}日报，共${dayTasks.length}个任务`);
+            closeDailyExportModal();
+        }
+
+        // 导出周报
+        function exportWeeklyReport() {
+            const tasks = loadFromLocalStorage() || [];
+            const dayNames = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const slotNames = { 'AM': '上午', 'PM': '下午', 'EVENING': '晚上' };
+            const priorityNames = { 1: '高', 2: '中', 3: '低' };
+
+            // 筛选有效任务（排除任务池）
+            const weekTasks = tasks.filter(task => task.weekday && task.weekday >= 1 && task.weekday <= 7);
+
+            if (weekTasks.length === 0) {
+                showToast('本周没有任务数据', 'error');
+                return;
+            }
+
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 准备数据
+            const wsData = [
+                ['星期', '时段', '任务标题', '开始时间', '结束时间', '优先级', '完成状态', '备注']
+            ];
+
+            // 按星期和时段排序
+            const sortedTasks = weekTasks.sort((a, b) => {
+                if (a.weekday !== b.weekday) return a.weekday - b.weekday;
+                const slotOrder = { 'AM': 1, 'PM': 2, 'EVENING': 3 };
+                if (a.slot !== b.slot) return (slotOrder[a.slot] || 4) - (slotOrder[b.slot] || 4);
+                return (a.start || '').localeCompare(b.start || '');
+            });
+
+            sortedTasks.forEach(task => {
+                wsData.push([
+                    dayNames[task.weekday] || '',
+                    slotNames[task.slot] || task.slot,
+                    task.title || '',
+                    task.start || '',
+                    task.end || '',
+                    priorityNames[task.priority] || '中',
+                    task.done ? '已完成' : '未完成',
+                    task.note || ''
+                ]);
+            });
+
+            // 创建工作表
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            
+            // 设置列宽
+            ws['!cols'] = [
+                { wch: 10 }, // 星期
+                { wch: 10 }, // 时段
+                { wch: 30 }, // 任务标题
+                { wch: 12 }, // 开始时间
+                { wch: 12 }, // 结束时间
+                { wch: 10 }, // 优先级
+                { wch: 12 }, // 完成状态
+                { wch: 25 }  // 备注
+            ];
+
+            // 添加工作表到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '周报');
+
+            // 生成文件名
+            const today = new Date();
+            const fileName = `周报_${today.getFullYear()}年${(today.getMonth()+1).toString().padStart(2,'0')}月${today.getDate().toString().padStart(2,'0')}日.xlsx`;
+
+            // 导出文件
+            XLSX.writeFile(wb, fileName);
+            
+            showToast(`成功导出周报，共${weekTasks.length}个任务`);
+            
+            // 关闭下拉菜单
+            document.getElementById('exportDropdown').classList.remove('show');
+            document.querySelector('.dropdown-toggle').classList.remove('active');
+        }
+
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.export-dropdown');
+            if (dropdown && !dropdown.contains(event.target)) {
+                document.getElementById('exportDropdown').classList.remove('show');
+                document.querySelector('.dropdown-toggle').classList.remove('active');
+            }
+        });
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modals = ['taskModal', 'importModal', 'settingsModal', 'dailyExportModal', 'deleteConfirmModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    if (modalId === 'taskModal') {
+                        closeModal();
+                    } else if (modalId === 'importModal') {
+                        closeImportModal();
+                    } else if (modalId === 'settingsModal') {
+                        closeSettingsModal();
+                    } else if (modalId === 'dailyExportModal') {
+                        closeDailyExportModal();
+                    } else if (modalId === 'deleteConfirmModal') {
+                        closeDeleteConfirmModal();
+                    }
+                }
+            });
+        };
+        
+        // 监听窗口大小变化，实时调整布局
+        window.addEventListener('resize', function() {
+            toggleWeekendDisplay();
+        });
+        
+        // 页面加载完成后初始化网格布局
+        window.addEventListener('load', function() {
+            // 确保手机端网格布局正确初始化
+            if (window.innerWidth <= 480) {
+                toggleWeekendDisplay();
+            }
+        });
+    </script>
+    
+    <!-- 百度统计 -->
+    <script>
+        var _hmt = _hmt || [];
+        (function() {
+            var hm = document.createElement("script");
+            hm.src = "https://hm.baidu.com/hm.js?d1ef5bc4a815f48f6cc66e95c0bd9a92";
+            var s = document.getElementsByTagName("script")[0];
+            s.parentNode.insertBefore(hm, s);
+        })();
+    </script>
+    
+    <!-- 底部版权信息 -->
+    <footer class="footer" style="color: #f9f9f9; padding: 6px 0; margin: 20px 0 0 0; text-align: center; width: 100%;">
+        <div class="footer-content" style="max-width: 1200px; margin: 0 auto; padding: 0 8px;">
+            <div class="copyright">
+                <p style="margin: 0; font-size: 8px; color: #f9f9f9; line-height: 1.1; text-align: center; font-weight: normal;">
+                      Copyright © 2021-2075 倾企 All Rights Reserved. | 倾企品牌课程表工具 |
+                      <a href="https://www.qingqiqifu.cn/" target="_blank" rel="noopener noreferrer" style="color: #f9f9f9; text-decoration: none; font-size: 8px; font-weight: normal;">企业服务</a>
+                  </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
