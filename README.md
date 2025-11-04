@@ -3,7 +3,7 @@ Visit Homepage [Darkwarrior's Webhole | DW2025](https://darkwarrior2025.xyz)
 
 ### Y2025 Progress on AUG-26th   Refer to [Year Progress](https://progressbarserver.appspot.com/)
 
-▓▓▓▓▓▓▓▓▓░░░░░░ 65%
+▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 84%
 
 ### Getting Started Now 
 **Refering**    
