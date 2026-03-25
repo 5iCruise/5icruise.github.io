@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<!-- z.ai.powered-by: lxcww#qq.com -->
+<title>斗兽棋</title>
+<style>
+:root{
+  --bg:#F5ECD7;--cell:#FFF8E7;--cell-border:#D4C5A0;
+  --water1:#87CEEB;--water2:#4FC3F7;
+  --blue1:#5C9CE6;--blue2:#2E6BBF;
+  --red1:#EF6B6B;--red2:#C62828;
+  --trap-bg:#FFF3CD;--trap-border:#FFD54F;
+  --den-bg:#E8D5B7;--den-border:#A0845C;
+  --text:#3E2723;--text-light:#8D6E63;
+  --shadow:rgba(0,0,0,.15);
+  --highlight:rgba(76,175,80,.5);
+  --selected-glow:rgba(255,235,59,.8);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text)}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;-webkit-tap-highlight-color:transparent}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;transition:opacity .3s}
+.screen.active{display:flex}
+#menu{background:linear-gradient(180deg,#E8F5E9 0%,#FFF8E1 50%,#FFEBEE 100%)}
+.menu-title{font-size:clamp(2rem,8vw,3.5rem);font-weight:900;background:linear-gradient(135deg,var(--blue1),var(--red1));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.2em;letter-spacing:.05em}
+.menu-subtitle{font-size:clamp(.9rem,3vw,1.2rem);color:var(--text-light);margin-bottom:2em}
+.menu-btn{width:min(280px,70vw);padding:14px 0;margin:8px 0;border-radius:16px;font-size:1.1rem;font-weight:700;color:#fff;box-shadow:0 4px 12px var(--shadow);transition:transform .15s,box-shadow .15s;letter-spacing:.05em}
+.menu-btn:active{transform:scale(.96);box-shadow:0 2px 6px var(--shadow)}
+.btn-play{background:linear-gradient(135deg,#66BB6A,#43A047)}
+.btn-pvp{background:linear-gradient(135deg,#AB47BC,#8E24AA)}
+.btn-rules{background:linear-gradient(135deg,#42A5F5,#1E88E5)}
+.btn-history{background:linear-gradient(135deg,#FFA726,#FB8C00)}
+.btn-settings{background:linear-gradient(135deg,#78909C,#546E7A)}
+.menu-deco{position:absolute;font-size:clamp(3rem,10vw,6rem);opacity:.15;pointer-events:none}
+.deco-tl{top:5%;left:5%}.deco-tr{top:5%;right:5%}.deco-bl{bottom:5%;left:5%}.deco-br{bottom:5%;right:5%}
+#difficulty{background:rgba(0,0,0,.5);z-index:50}
+.diff-panel{background:#fff;border-radius:20px;padding:2em;width:min(320px,85vw);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.diff-panel h2{margin-bottom:1em;font-size:1.4rem}
+.diff-btn{display:block;width:100%;padding:14px;margin:8px 0;border-radius:12px;font-size:1.05rem;font-weight:600;color:#fff;transition:transform .15s}
+.diff-btn:active{transform:scale(.96)}
+.diff-easy{background:linear-gradient(135deg,#66BB6A,#43A047)}
+.diff-medium{background:linear-gradient(135deg,#FFA726,#FB8C00)}
+.diff-hard{background:linear-gradient(135deg,#EF5350,#C62828)}
+.diff-cancel{background:#eee;color:#666;margin-top:16px}
+#game{background:var(--bg);padding:8px}
+.game-header{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:500px;padding:4px 8px;margin-bottom:4px}
+.player-info{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:12px;background:rgba(255,255,255,.7);font-size:.85rem;font-weight:600}
+.player-info.blue{border-left:4px solid var(--blue1)}
+.player-info.red{border-left:4px solid var(--red1)}
+.player-info.active-turn{background:rgba(255,235,59,.3);box-shadow:0 0 8px rgba(255,235,59,.4)}
+.player-info .pieces-left{font-size:.75rem;color:var(--text-light)}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;min-width:2em;text-align:center}
+.timer.warning{color:#E53935;animation:pulse .5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.turn-indicator{text-align:center;font-size:.9rem;font-weight:700;padding:4px 16px;border-radius:20px;margin-bottom:6px}
+.turn-indicator.blue-turn{background:rgba(94,156,230,.2);color:var(--blue2)}
+.turn-indicator.red-turn{background:rgba(239,107,107,.2);color:var(--red2)}
+.board-wrapper{position:relative;width:min(98vw,calc(98vh - 200px),490px);aspect-ratio:7/9;margin:0 auto}
+.board{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(9,1fr);width:100%;height:100%;border:3px solid var(--cell-border);border-radius:12px;overflow:hidden;background:var(--cell-border);gap:2px;padding:2px}
+.cell{position:relative;border-radius:6px;background:var(--cell);display:flex;align-items:center;justify-content:center;transition:background .2s;overflow:visible}
+.cell.water{background:linear-gradient(135deg,var(--water1),var(--water2));overflow:hidden}
+.cell.water::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 8px,rgba(255,255,255,.15) 8px,rgba(255,255,255,.15) 16px);animation:wave 3s linear infinite}
+@keyframes wave{0%{transform:translateX(0)}100%{transform:translateX(16px)}}
+.cell.water .water-deco{position:absolute;font-size:clamp(.6rem,2.5vw,1rem);opacity:.6;pointer-events:none;z-index:0}
+.cell.trap{background:var(--trap-bg);border:2px solid var(--trap-border)}
+.cell.trap::before{content:'⚠️';position:absolute;font-size:clamp(.8rem,3.5vw,1.3rem);opacity:.4;top:32%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1}
+.cell.trap::after{content:'陷阱';position:absolute;font-size:clamp(.5rem,2vw,.75rem);opacity:.55;font-weight:700;color:#B8860B;top:68%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1}
+.cell.den{background:var(--den-bg);border:2px solid var(--den-border)}
+.cell.den::before{content:'🏠';position:absolute;font-size:clamp(.8rem,3.5vw,1.3rem);opacity:.4;top:32%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1}
+.cell.den::after{content:'兽穴';position:absolute;font-size:clamp(.5rem,2vw,.75rem);opacity:.6;font-weight:700;color:var(--den-border);top:68%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:1}
+.cell.valid-move .move-dot{position:absolute;width:30%;height:30%;border-radius:50%;background:var(--highlight);z-index:5;animation:dot-pulse 1s infinite;top:50%;left:50%;transform:translate(-50%,-50%)}
+.cell.valid-capture{box-shadow:inset 0 0 0 3px rgba(244,67,54,.6);z-index:1}
+@keyframes dot-pulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.3);opacity:1}}
+.piece{position:relative;z-index:10;width:82%;height:82%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s,box-shadow .15s;user-select:none;-webkit-user-select:none}
+.piece:active{transform:scale(.92)}
+.piece.blue{background:linear-gradient(145deg,var(--blue1),var(--blue2));box-shadow:0 3px 8px rgba(46,107,191,.4),inset 0 1px 2px rgba(255,255,255,.3)}
+.piece.red{background:linear-gradient(145deg,var(--red1),var(--red2));box-shadow:0 3px 8px rgba(198,40,40,.4),inset 0 1px 2px rgba(255,255,255,.3)}
+.piece.selected{animation:bounce .4s;box-shadow:0 0 0 4px var(--selected-glow),0 4px 12px var(--shadow)!important;z-index:20}
+@keyframes bounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-15%)}60%{transform:translateY(-5%)}}
+.piece .emoji{font-size:clamp(1rem,4.5vw,1.8rem);line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.2))}
+.piece .name{font-size:clamp(.45rem,1.8vw,.65rem);color:rgba(255,255,255,.95);font-weight:700;margin-top:1px;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.game-controls{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center}
+.ctrl-btn{padding:8px 16px;border-radius:10px;font-size:.8rem;font-weight:600;color:#fff;background:linear-gradient(135deg,#78909C,#546E7A);box-shadow:0 2px 6px var(--shadow);transition:transform .15s}
+.ctrl-btn:active{transform:scale(.95)}
+.ctrl-btn:disabled{opacity:.4;pointer-events:none}
+.ctrl-btn.restart{background:linear-gradient(135deg,#66BB6A,#43A047)}
+.ctrl-btn.exit{background:linear-gradient(135deg,#78909C,#546E7A)}
+.ctrl-btn.undo{background:linear-gradient(135deg,#FFA726,#FB8C00)}
+.ctrl-btn.surrender{background:linear-gradient(135deg,#EF5350,#C62828)}
+.ctrl-btn.rules-btn{background:linear-gradient(135deg,#42A5F5,#1E88E5)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;border-radius:20px;padding:1.5em;width:min(480px,95vw);max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2);position:relative}
+.modal h2{text-align:center;margin-bottom:1em;font-size:1.3rem}
+.modal-close{position:absolute;top:12px;right:16px;font-size:1.5rem;background:none;color:#999;cursor:pointer;line-height:1}
+.modal-close:hover{color:#333}
+.rules-content{font-size:.85rem;line-height:1.7;color:#555}
+.rules-content h3{color:var(--text);margin:1em 0 .3em;font-size:1rem}
+.rules-content table{width:100%;border-collapse:collapse;margin:.5em 0;font-size:.8rem}
+.rules-content th,.rules-content td{border:1px solid #ddd;padding:4px 8px;text-align:center}
+.rules-content th{background:#f5f5f5}
+.gameover-icon{font-size:4rem;text-align:center;margin:.5em 0}
+.gameover-title{text-align:center;font-size:1.5rem;font-weight:900;margin-bottom:.5em}
+.gameover-sub{text-align:center;color:var(--text-light);margin-bottom:1.5em}
+.gameover-btns{display:flex;gap:10px;justify-content:center}
+.gameover-btns button{padding:12px 24px;border-radius:12px;font-size:1rem;font-weight:700;color:#fff}
+.btn-replay{background:linear-gradient(135deg,#66BB6A,#43A047)}
+.btn-menu{background:linear-gradient(135deg,#78909C,#546E7A)}
+.toast{position:fixed;top:20%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:10px 24px;border-radius:12px;font-size:.9rem;font-weight:600;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+@media(max-height:700px){
+  .game-header{padding:2px 4px;margin-bottom:2px}
+  .turn-indicator{padding:2px 12px;font-size:.8rem;margin-bottom:4px}
+  .game-controls{margin-top:4px;gap:6px}
+  .ctrl-btn{padding:6px 12px;font-size:.75rem}
+}
+@media(min-width:600px){
+  .board-wrapper{width:min(490px,60vh)}
+}
+
+.timer-option{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#f9f9f9;cursor:pointer;transition:background .15s;font-size:.95rem}
+.timer-option:hover{background:#f0f0f0}
+.timer-option:active{background:#e8e8e8}
+.timer-option input[type="radio"]{width:18px;height:18px;accent-color:var(--blue1)}
+.timer-option.active{background:rgba(94,156,230,.12);border:2px solid var(--blue1)}
+</style>
+</head>
+<body>
+<div id="menu" class="screen active">
+  <div class="menu-deco deco-tl">🦁</div>
+  <div class="menu-deco deco-tr">🐯</div>
+  <div class="menu-deco deco-bl">🐘</div>
+  <div class="menu-deco deco-br">🐭</div>
+  <div class="menu-title">斗兽棋</div>
+  <div class="menu-subtitle">经典策略 · 轻松对战</div>
+  <button class="menu-btn btn-play" onclick="showDifficulty()">🤖 人机对战</button>
+  <button class="menu-btn btn-pvp" onclick="startPVP()">👥 双人对战</button>
+  <button class="menu-btn btn-rules" onclick="showRules()">📖 规则教程</button>
+    <button class="menu-btn btn-settings" onclick="showSettings()">⚙️ 游戏设置</button>
+</div>
+<div id="difficulty" class="screen">
+  <div class="diff-panel">
+    <h2>选择难度</h2>
+    <button class="diff-btn diff-easy" onclick="startGame('easy')">🌱 简单</button>
+    <button class="diff-btn diff-medium" onclick="startGame('medium')">🔥 中等</button>
+    <button class="diff-btn diff-hard" onclick="startGame('hard')">💀 困难</button>
+    <button class="diff-btn diff-cancel" onclick="hideDifficulty()">取消</button>
+  </div>
+</div>
+<div id="game" class="screen">
+  <div class="game-header">
+    <div class="player-info blue" id="blue-info">
+      <span>🔵 蓝方</span>
+      <span class="pieces-left" id="blue-count">8子</span>
+      <span class="timer" id="blue-timer">60</span>
+    </div>
+    <div class="player-info red" id="red-info">
+      <span>🔴 红方</span>
+      <span class="pieces-left" id="red-count">8子</span>
+      <span class="timer" id="red-timer">60</span>
+    </div>
+  </div>
+  <div class="turn-indicator blue-turn" id="turn-indicator">蓝方回合</div>
+  <div class="board-wrapper">
+    <div class="board" id="board"></div>
+  </div>
+  <div class="game-controls">
+    <button class="ctrl-btn undo" id="undo-btn" onclick="undoMove()" disabled>↩️ 悔棋</button>
+    <button class="ctrl-btn restart" onclick="restartGame()">🔄 重开</button>
+    <button class="ctrl-btn surrender" onclick="surrender()">🏳️ 认输</button>
+    <button class="ctrl-btn exit" onclick="backToMenu()">🚪 退出</button>
+    <button class="ctrl-btn rules-btn" onclick="showRules()">📖 规则</button>
+  </div>
+</div>
+<div class="modal-overlay" id="rules-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="hideRules()">✕</button>
+    <h2>📖 游戏规则</h2>
+    <div class="rules-content">
+      <h3>🎯 游戏目标</h3>
+      <p>将己方任意棋子走入对方<strong>兽穴</strong>，或吃光对方所有棋子即可获胜。</p>
+      <h3>🐾 动物战力</h3>
+      <p>象 > 狮 > 虎 > 豹 > 狼 > 狗 > 猫 > 鼠</p>
+      <h3>⚔️ 吃子规则</h3>
+      <table>
+        <tr><th>棋子</th><th>可吃</th></tr>
+        <tr><td>🐘 象</td><td>象、狮、虎、豹、狼、狗、猫</td></tr>
+        <tr><td>🦁 狮</td><td>狮、虎、豹、狼、狗、猫、鼠</td></tr>
+        <tr><td>🐯 虎</td><td>虎、豹、狼、狗、猫、鼠</td></tr>
+        <tr><td>🐆 豹</td><td>豹、狼、狗、猫、鼠</td></tr>
+        <tr><td>🐺 狼</td><td>狼、狗、猫、鼠</td></tr>
+        <tr><td>🐶 狗</td><td>狗、猫、鼠</td></tr>
+        <tr><td>🐱 猫</td><td>猫、鼠</td></tr>
+        <tr><td>🐭 鼠</td><td>鼠、象（特殊！）</td></tr>
+      </table>
+      <h3>🌊 特殊规则</h3>
+      <p><strong>鼠克象：</strong>鼠能吃象，但象不能吃鼠。</p>
+      <p><strong>鼠游河：</strong>只有鼠能进入小河。河中鼠可互吃，但河鼠不能吃陆地象，陆地兽也不能吃河鼠。</p>
+      <p><strong>狮虎跳河：</strong>狮和虎可跳过小河到对岸（路径中不能有鼠阻挡）。</p>
+      <p><strong>陷阱：</strong>敌方棋子走入己方陷阱后，己方任意棋子均可吃掉它。</p>
+      <h3>⏱️ 其他</h3>
+      <p>每回合限时可在设置中调整，连续超时2次判负。连续100回合无吃子则和棋。</p>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="gameover-modal">
+  <div class="modal">
+    <div class="gameover-icon" id="gameover-icon">🎉</div>
+    <div class="gameover-title" id="gameover-title">胜利！</div>
+    <div class="gameover-sub" id="gameover-sub">恭喜你赢得了比赛</div>
+    <div class="gameover-btns">
+      <button class="btn-replay" onclick="replayGame()">再来一局</button>
+      <button class="btn-menu" onclick="backToMenu()">返回菜单</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="hideSettings()">✕</button>
+    <h2>⚙️ 游戏设置</h2>
+    <div class="rules-content">
+      <h3>⏱️ 回合计时</h3>
+      <p style="margin-bottom:12px;">设置每回合的思考时间，超时将自动跳过回合。</p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label class="timer-option" onclick="setTimerPerMove(30)">
+          <input type="radio" name="timer" value="30"> <span>30 秒 / 回合</span>
+        </label>
+        <label class="timer-option" onclick="setTimerPerMove(60)">
+          <input type="radio" name="timer" value="60" checked> <span>60 秒 / 回合（默认）</span>
+        </label>
+        <label class="timer-option" onclick="setTimerPerMove(120)">
+          <input type="radio" name="timer" value="120"> <span>120 秒 / 回合</span>
+        </label>
+        <label class="timer-option" onclick="setTimerPerMove(0)">
+          <input type="radio" name="timer" value="0"> <span>不限时</span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+// ==================== CONSTANTS ====================
+const COLS=7,ROWS=9;
+const POWER={象:8,狮:7,虎:6,豹:5,狼:4,狗:3,猫:2,鼠:1};
+const EMOJI={象:'🐘',狮:'🦁',虎:'🐯',豹:'🐆',狼:'🐺',狗:'🐶',猫:'🐱',鼠:'🐭'};
+const PIECE_VALUE={象:100,狮:90,虎:80,豹:70,狼:60,狗:50,猫:40,鼠:35};
+const WATER=new Set();
+[1,2,4,5].forEach(c=>[3,4,5].forEach(r=>WATER.add(c+','+r)));
+
+// Traps: 品字形包围兽穴
+// Blue den at (3,0), traps at (2,0) (4,0) (3,1) — 倒品字
+const BLUE_TRAPS=new Set(['2,0','4,0','3,1']);
+// Red den at (3,8), traps at (2,8) (4,8) (3,7) — 正品字
+const RED_TRAPS=new Set(['2,8','4,8','3,7']);
+
+const BLUE_DEN='3,0',RED_DEN='3,8';
+const BLUE_INIT=[[0,0,'狮'],[6,0,'虎'],[1,1,'狗'],[6,1,'猫'],[0,2,'鼠'],[2,2,'豹'],[4,2,'狼'],[6,2,'象']];
+const RED_INIT=[[0,6,'象'],[2,6,'狼'],[4,6,'豹'],[6,6,'鼠'],[1,7,'猫'],[5,7,'狗'],[0,8,'虎'],[6,8,'狮']];
+const DIRS=[[0,-1],[0,1],[-1,0],[1,0]];
+
+// ==================== STATE ====================
+let state=null,timerInterval=null,aiDifficulty='medium',undoUsed=false,gameMode='ai',timerPerMove=60;
+
+function createInitialState(){
+  const pieces=[];
+  BLUE_INIT.forEach(([c,r,s])=>pieces.push({species:s,side:'blue',col:c,row:r,alive:true}));
+  RED_INIT.forEach(([c,r,s])=>pieces.push({species:s,side:'red',col:c,row:r,alive:true}));
+  return{pieces,turn:'blue',selected:null,validMoves:[],history:[],moveCount:0,lastCaptureMove:0,gameOver:false,winner:null,blueTimeouts:0,redTimeouts:0,blueTime:timerPerMove||60,redTime:timerPerMove||60};
+}
+
+function getPieceAt(c,r){return state.pieces.find(p=>p.alive&&p.col===c&&p.row===r)||null;}
+function isWater(c,r){return WATER.has(c+','+r);}
+function isBlueTrap(c,r){return BLUE_TRAPS.has(c+','+r);}
+function isRedTrap(c,r){return RED_TRAPS.has(c+','+r);}
+function isTrap(c,r){return isBlueTrap(c,r)||isRedTrap(c,r);}
+function isBlueDen(c,r){return c+','+r===BLUE_DEN;}
+function isRedDen(c,r){return c+','+r===RED_DEN;}
+function isDen(c,r){return isBlueDen(c,r)||isRedDen(c,r);}
+function inBounds(c,r){return c>=0&&c<COLS&&r>=0&&r<ROWS;}
+
+function isInEnemyTrap(piece){
+  const k=piece.col+','+piece.row;
+  return piece.side==='blue'?RED_TRAPS.has(k):BLUE_TRAPS.has(k);
+}
+
+function isOwnDen(c,r,side){return side==='blue'?isBlueDen(c,r):isRedDen(c,r);}
+
+// ==================== CAPTURE ====================
+function canCapture(a,d){
+  if(a.side===d.side)return false;
+  if(isInEnemyTrap(d))return true;
+  const aW=isWater(a.col,a.row),dW=isWater(d.col,d.row);
+  if(aW&&!dW)return false;
+  if(!aW&&dW)return a.species==='鼠'&&d.species==='鼠';
+  if(aW&&dW)return a.species==='鼠'&&d.species==='鼠';
+  if(a.species==='鼠'&&d.species==='象')return true;
+  if(a.species==='象'&&d.species==='鼠')return false;
+  return POWER[a.species]>=POWER[d.species];
+}
+
+// ==================== MOVES ====================
+function getValidMoves(piece){
+  if(!piece||!piece.alive)return[];
+  const moves=[];
+  for(const[dc,dr]of DIRS){
+    const nc=piece.col+dc,nr=piece.row+dr;
+    if(!inBounds(nc,nr))continue;
+    if(isOwnDen(nc,nr,piece.side))continue;
+    if(isWater(nc,nr)&&piece.species!=='鼠')continue;
+    const t=getPieceAt(nc,nr);
+    if(t){if(t.side===piece.side)continue;if(!canCapture(piece,t))continue;}
+    moves.push({col:nc,row:nr,type:t?'capture':'move'});
+  }
+  if(piece.species==='狮'||piece.species==='虎')moves.push(...getJumpMoves(piece));
+  return moves;
+}
+
+function getJumpMoves(piece){
+  const jumps=[],{col,row}=piece;
+  if([1,2,4,5].includes(col)){
+    if(row===2&&canJumpClear(col,3,5,'v')){
+      const t=getPieceAt(col,6);
+      if(!t)jumps.push({col,row:6,type:'move'});
+      else if(t.side!==piece.side&&canCapture(piece,t))jumps.push({col,row:6,type:'capture'});
+    }
+    if(row===6&&canJumpClear(col,3,5,'v')){
+      const t=getPieceAt(col,2);
+      if(!t)jumps.push({col,row:2,type:'move'});
+      else if(t.side!==piece.side&&canCapture(piece,t))jumps.push({col,row:2,type:'capture'});
+    }
+  }
+  if([3,4,5].includes(row)){
+    if(col===0&&canJumpClear(1,2,row,'h')){const t=getPieceAt(3,row);if(!t)jumps.push({col:3,row,type:'move'});else if(t.side!==piece.side&&canCapture(piece,t))jumps.push({col:3,row,type:'capture'});}
+    if(col===3){
+      if(canJumpClear(1,2,row,'h')){const t=getPieceAt(0,row);if(!t)jumps.push({col:0,row,type:'move'});else if(t.side!==piece.side&&canCapture(piece,t))jumps.push({col:0,row,type:'capture'});}
+      if(canJumpClear(4,5,row,'h')){const t=getPieceAt(6,row);if(!t)jumps.push({col:6,row,type:'move'});else if(t.side!==piece.side&&canCapture(piece,t))jumps.push({col:6,row,type:'capture'});}
+    }
+    if(col===6&&canJumpClear(4,5,row,'h')){const t=getPieceAt(3,row);if(!t)jumps.push({col:3,row,type:'move'});else if(t.side!==piece.side&&canCapture(piece,t))jumps.push({col:3,row,type:'capture'});}
+  }
+  return jumps;
+}
+
+function canJumpClear(fixed,s,e,dir){
+  if(dir==='v'){for(let r=s;r<=e;r++){const p=getPieceAt(fixed,r);if(p&&p.species==='鼠')return false;}}
+  else{for(let c=s;c<=e;c++){const p=getPieceAt(c,fixed);if(p&&p.species==='鼠')return false;}}
+  return true;
+}
+
+// ==================== WIN CHECK ====================
+function checkGameEnd(){
+  for(const p of state.pieces){
+    if(!p.alive)continue;
+    if(p.side==='blue'&&isRedDen(p.col,p.row))return{over:true,winner:'blue',reason:'蓝方攻入兽穴！'};
+    if(p.side==='red'&&isBlueDen(p.col,p.row))return{over:true,winner:'red',reason:'红方攻入兽穴！'};
+  }
+  const bA=state.pieces.filter(p=>p.side==='blue'&&p.alive).length;
+  const rA=state.pieces.filter(p=>p.side==='red'&&p.alive).length;
+  if(bA===0)return{over:true,winner:'red',reason:'蓝方棋子全部被吃！'};
+  if(rA===0)return{over:true,winner:'blue',reason:'红方棋子全部被吃！'};
+  const cur=state.pieces.filter(p=>p.side===state.turn&&p.alive);
+  if(!cur.some(p=>getValidMoves(p).length>0))return{over:true,winner:state.turn==='blue'?'red':'blue',reason:(state.turn==='blue'?'蓝方':'红方')+'无子可动！'};
+  if(state.moveCount-state.lastCaptureMove>=200)return{over:true,winner:'draw',reason:'连续100回合无吃子，和棋！'};
+  return{over:false};
+}
+
+// ==================== EXECUTE MOVE ====================
+function executeMove(piece,target,isAI){
+  const captured=getPieceAt(target.col,target.row);
+  state.history.push({piece:{species:piece.species,side:piece.side,col:piece.col,row:piece.row},target:{col:target.col,row:target.row},captured:captured?{species:captured.species,side:captured.side,col:captured.col,row:captured.row}:null,turn:state.turn,lastCaptureMove:state.lastCaptureMove});
+  if(captured){captured.alive=false;state.lastCaptureMove=state.moveCount;}
+  piece.col=target.col;piece.row=target.row;
+  state.moveCount++;
+  const result=checkGameEnd();
+  if(result.over){state.gameOver=true;state.winner=result.winner;renderBoard();updateInfo();setTimeout(()=>showGameOver(result),500);return;}
+  state.turn=state.turn==='blue'?'red':'blue';
+  state.selected=null;state.validMoves=[];
+  if(state.turn==='blue'){state.blueTime=timerPerMove||60;state.redTime=timerPerMove||60;}
+  renderBoard();updateInfo();
+  // AI move only in AI mode
+  if(gameMode==='ai'&&state.turn==='red'&&!state.gameOver)setTimeout(()=>aiMove(),400);
+}
+
+// ==================== AI ====================
+function aiMove(){
+  if(state.gameOver||state.turn!=='red')return;
+  const moves=getAllMoves('red');
+  if(moves.length===0)return;
+  let best;
+  if(aiDifficulty==='easy')best=aiEasy(moves);
+  else if(aiDifficulty==='medium')best=aiMedium(moves);
+  else best=aiHard(moves);
+  if(best)executeMove(best.piece,best.target,true);
+}
+
+function getAllMoves(side){
+  const pieces=state.pieces.filter(p=>p.side===side&&p.alive),moves=[];
+  for(const p of pieces){const vm=getValidMoves(p);for(const t of vm)moves.push({piece:p,target:t});}
+  return moves;
+}
+
+function aiEasy(moves){return moves[Math.floor(Math.random()*moves.length)];}
+
+function aiMedium(moves){
+  const caps=moves.filter(m=>m.target.type==='capture');
+  if(caps.length>0){
+    caps.sort((a,b)=>(PIECE_VALUE[getPieceAt(b.target.col,b.target.row)?.species]||0)-(PIECE_VALUE[getPieceAt(a.target.col,a.target.row)?.species]||0));
+    return caps[0];
+  }
+  moves.sort((a,b)=>(Math.abs(a.piece.col-3)+a.piece.row)-(Math.abs(b.piece.col-3)+b.piece.row));
+  const top=moves.slice(0,Math.max(3,Math.floor(moves.length*.3)));
+  return top[Math.floor(Math.random()*top.length)];
+}
+
+function aiHard(moves){
+  let bestScore=-Infinity,bestMoves=[];
+  for(const move of moves){
+    const score=minimax(move,3,-Infinity,Infinity,false);
+    if(score>bestScore){bestScore=score;bestMoves=[move];}
+    else if(score===bestScore)bestMoves.push(move);
+  }
+  return bestMoves[Math.floor(Math.random()*bestMoves.length)];
+}
+
+function minimax(move,depth,alpha,beta,isMax){
+  const piece=move.piece,captured=getPieceAt(move.target.col,move.target.row);
+  const oC=piece.col,oR=piece.row;
+  if(captured)captured.alive=false;
+  piece.col=move.target.col;piece.row=move.target.row;
+  let score;
+  if(depth===0){score=evaluate();}
+  else{
+    const ns=isMax?'blue':'red',nm=getAllMoves(ns);
+    if(nm.length===0){score=isMax?-10000:10000;}
+    else if(isMax){score=-Infinity;for(const m of nm){const s=minimax(m,depth-1,alpha,beta,false);score=Math.max(score,s);alpha=Math.max(alpha,s);if(beta<=alpha)break;}}
+    else{score=Infinity;for(const m of nm){const s=minimax(m,depth-1,alpha,beta,true);score=Math.min(score,s);beta=Math.min(beta,s);if(beta<=alpha)break;}}
+  }
+  piece.col=oC;piece.row=oR;
+  if(captured)captured.alive=true;
+  return score;
+}
+
+function evaluate(){
+  let score=0;
+  for(const p of state.pieces){
+    if(!p.alive)continue;
+    const v=PIECE_VALUE[p.species];
+    if(p.side==='red'){score+=v;score+=(12-Math.abs(p.col-3)-p.row)*2;if(isBlueTrap(p.col,p.row))score+=20;}
+    else{score-=v;score-=(12-Math.abs(p.col-3)-(8-p.row))*2;if(isRedTrap(p.col,p.row))score-=20;}
+  }
+  return score;
+}
+
+// ==================== RENDER ====================
+function renderBoard(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cell=document.createElement('div');
+      cell.className='cell';cell.dataset.col=c;cell.dataset.row=r;
+      if(isWater(c,r)){
+        cell.classList.add('water');
+        if((c===1&&r===4)||(c===5&&r===4)){const d=document.createElement('span');d.className='water-deco';d.textContent='🏝️';cell.appendChild(d);}
+        if((c===2&&r===3)||(c===4&&r===3)){const d=document.createElement('span');d.className='water-deco';d.textContent='🌴';cell.appendChild(d);}
+        if((c===1&&r===5)||(c===5&&r===5)){const d=document.createElement('span');d.className='water-deco';d.textContent='☀️';cell.appendChild(d);}
+      }
+      if(isBlueTrap(c,r)||isRedTrap(c,r))cell.classList.add('trap');
+      if(isBlueDen(c,r)||isRedDen(c,r))cell.classList.add('den');
+      const vm=state.validMoves.find(m=>m.col===c&&m.row===r);
+      if(vm){
+        cell.classList.add(vm.type==='capture'?'valid-capture':'valid-move');
+        if(vm.type==='move'){const dot=document.createElement('span');dot.className='move-dot';cell.appendChild(dot);}
+      }
+      const piece=getPieceAt(c,r);
+      if(piece){
+        const el=document.createElement('div');
+        el.className='piece '+piece.side;
+        if(state.selected&&state.selected.species===piece.species&&state.selected.col===piece.col&&state.selected.row===piece.row)el.classList.add('selected');
+        el.innerHTML='<span class="emoji">'+EMOJI[piece.species]+'</span><span class="name">'+piece.species+'</span>';
+        cell.appendChild(el);
+      }
+      cell.addEventListener('click',(()=>{const cc=c,rr=r;return()=>onCellClick(cc,rr);})());
+      board.appendChild(cell);
+    }
+  }
+}
+
+function updateInfo(){
+  const bA=state.pieces.filter(p=>p.side==='blue'&&p.alive).length;
+  const rA=state.pieces.filter(p=>p.side==='red'&&p.alive).length;
+  document.getElementById('blue-count').textContent=bA+'子';
+  document.getElementById('red-count').textContent=rA+'子';
+  // Update player labels based on mode
+  document.querySelector('#blue-info > span:first-child').textContent='🔵 蓝方'+(gameMode==='ai'?' (你)':'');
+  document.querySelector('#red-info > span:first-child').textContent='🔴 红方'+(gameMode==='ai'?' (AI)':'');
+  const ti=document.getElementById('turn-indicator');
+  if(state.gameOver){ti.className='turn-indicator';ti.textContent='游戏结束';}
+  else if(state.turn==='blue'){ti.className='turn-indicator blue-turn';ti.textContent='🔵 蓝方回合';}
+  else{ti.className='turn-indicator red-turn';ti.textContent='🔴 红方回合';}
+  document.getElementById('blue-info').classList.toggle('active-turn',state.turn==='blue'&&!state.gameOver);
+  document.getElementById('red-info').classList.toggle('active-turn',state.turn==='red'&&!state.gameOver);
+  document.getElementById('undo-btn').disabled=undoUsed||state.history.length===0||state.gameOver;
+}
+
+// ==================== INTERACTION ====================
+function onCellClick(col,row){
+  if(state.gameOver)return;
+  // In AI mode, only allow blue side interaction
+  if(gameMode==='ai'&&state.turn!=='blue')return;
+  const clicked=getPieceAt(col,row);
+  if(state.selected){
+    const vm=state.validMoves.find(m=>m.col===col&&m.row===row);
+    if(vm){executeMove(state.selected,{col,row,type:vm.type});return;}
+  }
+  // In PVP mode, allow selecting current turn's pieces
+  if(clicked&&clicked.side===state.turn){state.selected=clicked;state.validMoves=getValidMoves(clicked);renderBoard();return;}
+  state.selected=null;state.validMoves=[];renderBoard();
+}
+
+// ==================== UNDO ====================
+function undoMove(){
+  if(undoUsed||state.history.length===0||state.gameOver)return;
+  // In AI mode, undo 2 moves (player + AI); in PVP mode, undo 1 move
+  const n=gameMode==='ai'?(state.history.length>=2?2:1):1;
+  for(let i=0;i<n;i++){
+    const h=state.history.pop();
+    const piece=state.pieces.find(p=>p.species===h.piece.species&&p.side===h.piece.side&&p.alive);
+    if(piece){piece.col=h.piece.col;piece.row=h.piece.row;}
+    if(h.captured){const cap=state.pieces.find(p=>p.species===h.captured.species&&p.side===h.captured.side&&!p.alive);if(cap){cap.alive=true;cap.col=h.captured.col;cap.row=h.captured.row;}}
+    state.moveCount--;state.lastCaptureMove=h.lastCaptureMove;state.turn=h.turn;
+  }
+  undoUsed=true;state.selected=null;state.validMoves=[];renderBoard();updateInfo();showToast('已悔棋（本局仅限1次）');
+}
+
+function restartGame(){if(confirm('确定要重新开始吗？')){stopTimer();state=createInitialState();undoUsed=false;renderBoard();updateInfo();startTimer();showToast('游戏已重置');}}
+
+function surrender(){
+  if(state.gameOver)return;
+  state.gameOver=true;
+  state.winner=state.turn==='blue'?'red':'blue';
+  showGameOver({winner:state.winner,reason:(state.turn==='blue'?'蓝方':'红方')+'认输'});
+}
+
+// ==================== TIMER ====================
+function startTimer(){
+  stopTimer();
+  timerInterval=setInterval(()=>{
+    if(state.gameOver){stopTimer();return;}
+    if(timerPerMove===0){return;}
+    if(state.turn==='blue'){
+      state.blueTime--;
+      const bt=document.getElementById('blue-timer');bt.textContent=state.blueTime;bt.classList.toggle('warning',state.blueTime<=10);
+      if(state.blueTime<=0){
+        state.blueTimeouts++;
+        if(state.blueTimeouts>=2){state.gameOver=true;state.winner='red';showGameOver({winner:'red',reason:'蓝方连续超时'});stopTimer();return;}
+        showToast('蓝方超时！还有'+(2-state.blueTimeouts)+'次机会');
+        state.turn='red';state.blueTime=timerPerMove||60;state.redTime=timerPerMove||60;renderBoard();updateInfo();
+        if(gameMode==='ai')setTimeout(()=>aiMove(),400);
+      }
+    }else{
+      state.redTime--;
+      const rt=document.getElementById('red-timer');rt.textContent=state.redTime;rt.classList.toggle('warning',state.redTime<=10);
+      if(state.redTime<=0){
+        state.redTimeouts++;
+        if(state.redTimeouts>=2){state.gameOver=true;state.winner='blue';showGameOver({winner:'blue',reason:'红方连续超时'});stopTimer();return;}
+        showToast('红方超时！还有'+(2-state.redTimeouts)+'次机会');
+        state.turn='blue';state.blueTime=timerPerMove||60;state.redTime=timerPerMove||60;renderBoard();updateInfo();
+      }
+    }
+  },1000);
+}
+function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}}
+
+// ==================== UI ====================
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showDifficulty(){showScreen('difficulty');}
+function hideDifficulty(){showScreen('menu');}
+function showRules(){document.getElementById('rules-modal').classList.add('active');}
+function hideRules(){document.getElementById('rules-modal').classList.remove('active');}
+
+function showGameOver(result){
+  stopTimer();
+  const icon=document.getElementById('gameover-icon'),title=document.getElementById('gameover-title'),sub=document.getElementById('gameover-sub');
+  if(result.winner==='blue'){icon.textContent='🎉';title.textContent='蓝方胜利！';title.style.color='#2E6BBF';sub.textContent=result.reason||'蓝方赢得了比赛！';}
+  else if(result.winner==='red'){icon.textContent='🎉';title.textContent='红方胜利！';title.style.color='#C62828';sub.textContent=result.reason||'红方赢得了比赛！';}
+  else{icon.textContent='🤝';title.textContent='和棋';title.style.color='#F57F17';sub.textContent=result.reason||'旗鼓相当！';}
+  document.getElementById('gameover-modal').classList.add('active');
+}
+function hideGameOver(){document.getElementById('gameover-modal').classList.remove('active');}
+
+
+function showSettings(){document.getElementById('settings-modal').classList.add('active');updateTimerRadio();}
+function hideSettings(){document.getElementById('settings-modal').classList.remove('active');}
+function setTimerPerMove(sec){timerPerMove=sec;updateTimerRadio();showToast(sec===0?'已设置：不限时':'已设置：'+sec+'秒/回合');}
+function updateTimerRadio(){document.querySelectorAll('input[name="timer"]').forEach(r=>{r.checked=parseInt(r.value)===timerPerMove;const label=r.closest('.timer-option');if(label)label.classList.toggle('active',r.checked);});}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+
+function startGame(diff){
+  gameMode='ai';aiDifficulty=diff;state=createInitialState();undoUsed=false;
+  showScreen('game');renderBoard();updateInfo();startTimer();
+  const dn={easy:'简单',medium:'中等',hard:'困难'};
+  showToast('人机对战 · 难度：'+dn[diff]);
+}
+
+function startPVP(){
+  gameMode='pvp';state=createInitialState();undoUsed=false;
+  showScreen('game');renderBoard();updateInfo();startTimer();
+  showToast('双人对战 · 蓝方先手');
+}
+
+function replayGame(){hideGameOver();if(gameMode==='ai')startGame(aiDifficulty);else startPVP();}
+function backToMenu(){hideGameOver();stopTimer();state=null;showScreen('menu');}
+
+document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('active');});});
+document.addEventListener('dblclick',e=>e.preventDefault());
+</script>
+</body>
+</html>
