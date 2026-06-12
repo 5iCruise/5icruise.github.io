@@ -9,9 +9,9 @@ Visit Homepage [Darkwarrior's Webhole | DW2025](https://darkwarrior2025.xyz)
     </tr>
   </table> 
 
-### Y2026 Progress on Apr-23rd   Refer to [YearProgress Bot](https://mastodon.social/@year@bgme.me) 、[Year Progress](https://progressbarserver.appspot.com/)、[DynamicBar](https://eyozy.github.io/year-progress)
+### Y2026 Progress on Jun-12th   Refer to [YearProgress Bot](https://mastodon.social/@year@bgme.me) 、[Year Progress](https://progressbarserver.appspot.com/)、[DynamicBar](https://eyozy.github.io/year-progress)
 
-▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░ 30%   
+▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░ 45%   
 
 
 ### Getting Started Now 
